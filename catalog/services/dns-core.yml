@@ -1,0 +1,22 @@
+kind: service
+schema_version: 1
+id: dns-core
+service:
+  type: infrastructure
+  title: UBB DNS Core
+  description: Local Unbound/dnsmasq-compatible internal DNS service.
+  family: dns
+  tags: [infrastructure, network]
+endpoint: dns-core
+exposure:
+  main_menu: false
+  via_bbs: []
+  admin_only: true
+access:
+  direct_allowed: false
+lifecycle:
+  mode: always_on
+  sharing: multiuser
+  startup_timeout_seconds: 30
+  restart: on_failure
+  shutdown_policy: manual

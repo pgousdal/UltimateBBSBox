@@ -8,7 +8,7 @@ from typing import Mapping
 from .errors import UnknownReferenceError, UnsupportedEndpointTypeError
 from .models import Endpoint, Integration, Service
 
-ENDPOINT_TYPES = frozenset(("local_process", "tcp", "ssh", "serial", "supervisor", "remote_supervisor"))
+ENDPOINT_TYPES = frozenset(("local_process", "tcp", "udp", "ssh", "serial", "supervisor", "remote_supervisor"))
 
 
 @dataclass(frozen=True)

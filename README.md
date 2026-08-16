@@ -194,3 +194,11 @@ M8.2 adds the dependency-free read-only web view:
 `python3 scripts/ubb-dashboard.py --bind 127.0.0.1 --port 8088`. It uses the
 same observatory model and versioned GET-only `/api/v1/` endpoints, with no
 database, write actions, authentication system, or public bind by default.
+### M6.1 network core
+
+The registry includes hidden, always-on `dns-core` and `ntp-core` infrastructure
+services. Their deterministic configuration models use the private `ubb.internal`
+namespace and UDP (plus DNS TCP) endpoints on loopback/trusted networks. Daemon
+installation is intentionally delegated to the host package manager; non-package
+third-party payloads remain subject to the M1 preservation-first policy. See
+[`docs/NETWORK-SERVICES.md`](docs/NETWORK-SERVICES.md).

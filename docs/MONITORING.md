@@ -41,3 +41,6 @@ unprivileged one-minute systemd units.
 
 No acknowledgement, suppression, email/webhook delivery, database, remote RPC,
 or automatic cleanup is implemented in M8.4.
+DNS/NTP infrastructure uses the same product-neutral health and alert derivation
+as other always-on services. A daemon outage is therefore observable without
+adding DNS/NTP branches to the monitoring core.

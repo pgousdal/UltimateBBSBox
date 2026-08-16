@@ -128,3 +128,9 @@ work.
 Generic deployment manifests, isolated per-service materialization, rights and
 lineage verification, and the repository-wide downloader guard are implemented.
 M6 network/core services remain future work.
+
+### M6.1 — DNS + NTP core services
+
+Internal DNS/NTP configuration models, UDP registry endpoints, and safe
+infrastructure declarations are implemented. Later M6 network services remain
+future work.

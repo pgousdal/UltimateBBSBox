@@ -1,0 +1,8 @@
+kind: endpoint
+schema_version: 1
+id: ntp-core
+type: udp
+host: 127.0.0.1
+port: 123
+protocol: ntp
+network_zone: internal_services

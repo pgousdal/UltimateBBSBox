@@ -20,3 +20,6 @@ asset trees without sharing mutable state implicitly.
 The integration guard covers wget, curl, get_url, direct Python HTTP acquisition,
 and mutable git clone patterns in product paths while permitting M1, package
 manager tasks, test fixtures, and metadata-only GitHub discovery.
+Host-installed DNS/NTP daemons are ordinary OS package-manager dependencies, not
+museum payloads. Any non-package-managed network software must still follow the
+M1 preservation-first acquisition and deployment chain.

@@ -64,3 +64,8 @@ Backup semantics and least-privilege ownership are described in
 The M8.3d HTTP fixture verifies login, role-specific controls, CSRF rejection,
 delegated actions, backup/qualification/release paths, concurrency, and audit
 privacy. The complete criterion mapping is in [M8.3-ACCEPTANCE.md](M8.3-ACCEPTANCE.md).
+### Infrastructure services
+
+The M6.1 DNS and NTP entries are hidden infrastructure services. They are
+observable through the normal service/health views but are not exposed through
+caller routing or caller administration.

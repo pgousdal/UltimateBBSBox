@@ -1,0 +1,8 @@
+kind: endpoint
+schema_version: 1
+id: dns-core
+type: udp
+host: 127.0.0.1
+port: 53
+protocol: dns
+network_zone: internal_services

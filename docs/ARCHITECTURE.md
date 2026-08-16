@@ -140,3 +140,11 @@ The production state remains split:
 M7.2 and M7.3 prove the protocol has no assumptions about Linux archives or native execution. Product code selects releases and guest-side assisted steps; canonical Amiga profiles and generic helpers resolve private prerequisites and separate golden/working disks; M5 receives only `fs_uae` metadata; M3 owns boot/readiness and M4 owns raw serial-over-TCP sessions. Preservation, licensed platform assets, installation workspace, golden state, runtime working state, and qualification evidence remain distinct. See [INTEGRATIONS.md](INTEGRATIONS.md), [AMIGA-INTEGRATIONS.md](AMIGA-INTEGRATIONS.md), and [AMIGA-PROFILES.md](AMIGA-PROFILES.md).
 
 M7.4 adds product-neutral Tier-1 hardening: structured evidence/readiness aggregation, verified live-state backup/restore, golden/working invariants, crash/reconcile drills, and explicit current/previous software rollback. Real emulator and login observations remain separate human evidence.
+## M6.1 infrastructure services
+
+DNS and NTP are modeled as generic hidden `infrastructure` services (`dns-core`
+and `ntp-core`) and use the same registry, lifecycle, observatory, and monitoring
+planes as other services. They are not caller-router destinations. Their UDP
+endpoints are represented by the generic `udp` endpoint type; DNS also exposes
+its native TCP endpoint where required. Host package-manager daemons own runtime
+process supervision, while UBB owns validated, deterministic configuration.

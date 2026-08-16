@@ -14,7 +14,7 @@
       "additionalProperties": false,
       "required": ["type", "title"],
       "properties": {
-        "type": {"enum": ["bbs", "door", "mud_world", "talker", "interactive_fiction", "shell", "irc", "nntp", "gopher", "other"]},
+        "type": {"enum": ["bbs", "infrastructure", "door", "mud_world", "talker", "interactive_fiction", "shell", "irc", "nntp", "gopher", "other"]},
         "title": {"type": "string", "minLength": 1},
         "description": {"type": "string"},
         "family": {"type": "string"},

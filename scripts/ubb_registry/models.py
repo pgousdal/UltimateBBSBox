@@ -50,7 +50,7 @@ class Endpoint:
             result["type"] = "remote_supervisor"
         host = result.get("host")
         local_host = host in (None, "localhost", "127.0.0.1", "::1")
-        result["location"] = "local" if self.type in ("local_process", "serial") or (self.type == "tcp" and local_host) else "remote"
+        result["location"] = "local" if self.type in ("local_process", "serial") or (self.type in ("tcp","udp") and local_host) else "remote"
         return result
 
     def to_dict(self) -> dict[str, Any]:
