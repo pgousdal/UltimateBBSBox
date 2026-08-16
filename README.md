@@ -218,6 +218,11 @@ user and system workflows, safe archive staging, and BBS mappings. See
 [docs/OFFLINE-EXCHANGE.md](docs/OFFLINE-EXCHANGE.md); no private packets are
 used in tests.
 
+M6.8 closes the network-services layer with a consolidated read-only inventory,
+readiness/qualification matrix, dependency/listener checks, deny-by-default
+firewall intent, and secret/TLS/queue diagnostics. See
+[docs/NETWORK-HARDENING.md](docs/NETWORK-HARDENING.md).
+
 M6.4 adds a conservative private-first NNTP/news model with bounded retention,
 generic BBS mappings, and optional explicit public modes. See
 [`docs/NEWS.md`](docs/NEWS.md); no public Usenet peering occurs in tests.

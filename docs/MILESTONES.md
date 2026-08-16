@@ -166,6 +166,16 @@ safe archive staging, generic BBS adapters, mappings, checkpoints, and
 privacy-safe diagnostics are implemented. QWKE and historical interoperability
 remain deferred/`HUMAN_REQUIRED`.
 
+### M6.8 — Network hardening/admin integration
+
+The consolidated M6 inventory, readiness/qualification matrix, dependency and
+listener validation, deny-by-default firewall intent, secret/TLS inventory, and
+read-only network diagnostics are implemented. Real daemon/provider
+qualification remains `HUMAN_REQUIRED`.
+
+M6 Network Services is complete as an architecture/configuration layer; no new
+protocols or live firewall changes are introduced.
+
 ### M6.6 — FTN transport/core
 
 BinkP-oriented FTN network/address/peer models, safe spool and area intent,
