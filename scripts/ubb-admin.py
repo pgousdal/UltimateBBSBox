@@ -11,11 +11,13 @@ def build_parser():
     p.add_argument("--catalog", default="catalog"); p.add_argument("--archive-root")
     p.add_argument("--supervisor-state"); p.add_argument("--router-state")
     p.add_argument("--install-root", action="append", default=[], metavar="INTEGRATION=PATH")
-    p.add_argument("--json", action="store_true")
+    p.add_argument("--json", action="store_true"); p.add_argument("--monitor-state")
     sub=p.add_subparsers(dest="command",required=True)
     for name in ("status","services","sessions","activity","alerts","hosts","readiness","artifacts","backups"):
         cmd=sub.add_parser(name)
         if name in ("activity",): cmd.add_argument("--limit",type=int,default=50)
+        if name=="alerts":
+            cmd.add_argument("--active",action="store_true"); cmd.add_argument("--history",action="store_true"); cmd.add_argument("--severity",choices=("info","warning","critical")); cmd.add_argument("--service"); cmd.add_argument("--host")
         if name in ("service",): cmd.add_argument("service_id")
     service=sub.add_parser("service"); service.add_argument("service_id")
     return p
@@ -43,7 +45,17 @@ def main(argv=None):
         if value is None: raise SystemExit(f"unknown service: {args.service_id}")
     elif args.command=="sessions": value=list(snapshot.sessions)
     elif args.command=="activity": value=[x.to_dict() for x in snapshot.activity]
-    elif args.command=="alerts": value=[x.to_dict() for x in snapshot.alerts]
+    elif args.command=="alerts":
+        value=[x.to_dict() for x in snapshot.alerts]
+        if args.monitor_state:
+            from ubb_monitoring import MonitoringEngine
+            value=list(MonitoringEngine(args.monitor_state).alerts(snapshot,active=True if args.active else (False if args.history else None),severity=args.severity,service=args.service))
+        else:
+            if args.active: value=[x for x in value if x.get("state","ACTIVE")=="ACTIVE"]
+            if args.history: value=[x for x in value if x.get("state")=="CLEARED"]
+            if args.severity: value=[x for x in value if x.get("severity")==args.severity]
+            if args.service: value=[x for x in value if x.get("service_id")==args.service]
+            if args.host: value=[x for x in value if x.get("host_id")==args.host]
     elif args.command=="hosts": value=list(snapshot.hosts)
     elif args.command=="readiness": value=[{"service_id":x.id,"readiness":x.readiness} for x in snapshot.services]
     elif args.command=="artifacts": value=[{"service_id":x.id,"artifact":x.artifact} for x in snapshot.services if x.artifact]

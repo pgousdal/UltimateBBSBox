@@ -11,7 +11,14 @@ healthy; an always-on stop is unhealthy. Remote services and hosts without
 telemetry remain `UNKNOWN`, never `OFFLINE`.
 
 The local host is observed conservatively. Remote heartbeat/RPC ingestion is
-deferred; no remote command or supervisor RPC exists.
+limited to strict JSON observations via `ubb-monitor.py heartbeat ingest FILE`;
+it never executes commands, and no remote supervisor RPC exists. Stale or
+missing observations produce `UNKNOWN`.
+
+Storage policy observes logical state, backup, and archive roots using both
+free percentage and absolute free bytes. Warning and critical thresholds are
+configurable in `MonitoringEngine` and filesystem failures degrade to
+`UNKNOWN` without attempting repair.
 
 ## Alert lifecycle
 

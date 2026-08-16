@@ -34,7 +34,7 @@ class DashboardApp:
         if not record:
             self.failed[key]=now+min(300,2**min(8,int(self.failed.get(key,now)-now+1))); return None
         self.failed.pop(key,None); return self.sessions.create(user,record['role'])
-    def api(self,path):
+    def api(self,path,query=None):
         snap=self.snapshot(); data=snap.to_dict(); parts=[x for x in path.split("/") if x]
         if parts==["api","v1","status"]:
             services=data["services"]; return {"services":len(services),"running":sum(x["state"] in ("running","ready","maintenance") for x in services),"active_callers":sum(x["active_sessions"] for x in services),"maintenance":sum(x["maintenance"] for x in services),"failed":sum(x["state"]=="failed" for x in services),"alerts":len(data["alerts"])}
@@ -48,6 +48,11 @@ class DashboardApp:
             return None
         if parts[:3]==["api","v1","alerts"]:
             alerts=list(self.monitoring.alerts(snap) if self.monitoring else (x.to_dict() for x in snap.alerts))
+            query=query or {}
+            if query.get("severity"): alerts=[x for x in alerts if x.get("severity")==query["severity"][0]]
+            if query.get("service"): alerts=[x for x in alerts if x.get("service_id")==query["service"][0]]
+            if query.get("host"): alerts=[x for x in alerts if x.get("host_id")==query["host"][0]]
+            if query.get("state"): alerts=[x for x in alerts if x.get("state","ACTIVE")==query["state"][0]]
             if len(parts)==3:return alerts
             return next((x for x in alerts if x.get("alert_id",x.get("id"))==parts[3]),None)
         mapping={"sessions":"sessions","activity":"activity","alerts":"alerts","readiness":None,"artifacts":None,"backups":None,"hosts":"hosts"}
@@ -59,7 +64,7 @@ class DashboardApp:
             return data[key]
         return None
     def page(self,path,session=None):
-        snap=self.snapshot(); data=snap.to_dict(); data["alerts"]=list(self.monitoring.alerts(snap) if self.monitoring else snap.alerts); parts=[x for x in path.split("/") if x]
+        snap=self.snapshot(); data=snap.to_dict(); data["alerts"]=list(self.monitoring.alerts(snap) if self.monitoring else [x.to_dict() for x in getattr(snap,"alerts",())]); parts=[x for x in path.split("/") if x]
         title="Ultimate BBS Box Observatory"; body=""
         if path=="/" or path=="":
             s=data["services"]; body=f"<h1>{title}</h1><div class='cards'>"+"".join(f"<div class='card'><strong>{html.escape(k)}</strong><br><big>{v}</big></div>" for k,v in (("Services",len(s)),("Running",sum(x['state'] in ('running','ready','maintenance') for x in s)),("Active callers",sum(x['active_sessions'] for x in s)),("Maintenance",sum(x['maintenance'] for x in s)),("Failed",sum(x['state']=='failed' for x in s)),("Alerts",len(data['alerts']))))+"</div>"
@@ -69,10 +74,14 @@ class DashboardApp:
             if item is None:return None
             body=f"<h1>{html.escape(item['title'])}</h1><p><code>{html.escape(item['id'])}</code></p>"+self._definition(item)
             if session and self.require_auth: body += self._controls(item,session)
+        elif len(parts)==2 and parts[0]=="hosts":
+            host=next((x for x in data["hosts"] if x.get("id")==parts[1]),None)
+            if host is None:return None
+            body=f"<h1>Host {html.escape(parts[1])}</h1><pre>{html.escape(json.dumps(host,indent=2,sort_keys=True))}</pre>"
         elif parts and parts[0] in ("services","sessions","activity","alerts","readiness","artifacts","backups","hosts","audit"):
             key=parts[0]; body=f"<h1>{html.escape(key.title())}</h1>"
             if key=="services": body+=self._service_table(data["services"])
-            elif key=="alerts": body+="<ul>"+"".join(f"<li class='{html.escape(x['severity'])}'><strong>{html.escape(x['severity'])}</strong> {html.escape(x['message'])} ({html.escape(x.get('service_id') or '')})</li>" for x in data['alerts'])+"</ul>"
+            elif key=="alerts": body+="<ul>"+"".join(f"<li class='{html.escape(x.get('severity',''))}'><strong>{html.escape(x.get('severity',''))}</strong> {html.escape(x.get('summary',x.get('message','')))} ({html.escape(x.get('service_id') or x.get('host_id') or '')}) state={html.escape(x.get('state','ACTIVE'))}</li>" for x in data['alerts'])+"</ul>"
             else:
                 if key=="hosts": value=data["hosts"]
                 elif key=="readiness": value=[{"service_id":x["id"],"release":x["release"],"readiness":x["readiness"]} for x in data["services"]]
@@ -104,7 +113,7 @@ class DashboardApp:
         rows="".join(f"<tr><td><a href='/service/{html.escape(x['id'])}'>{html.escape(x['title'])}</a></td><td>{html.escape(x['type'])}</td><td>{html.escape(str(x['release'] or 'UNKNOWN'))}</td><td>{html.escape(str(x['policy'] or 'UNKNOWN'))}</td><td><span class='badge'>{html.escape(x['state'])}</span></td><td>{x['active_sessions']}</td><td>{html.escape(x['readiness'])}</td><td>{html.escape(x['host_health'])}</td></tr>" for x in items)
         return "<table><thead><tr><th>Name</th><th>Type</th><th>Release</th><th>Policy</th><th>State</th><th>Callers</th><th>Readiness</th><th>Host</th></tr></thead><tbody>"+rows+"</tbody></table>"
     def _definition(self,x):
-        fields=[("Type",x['type']),("Integration",x.get('integration')),("Runtime",x.get('runtime')),("Policy",x.get('policy')),("Recommended",x.get('recommended_policy')),("State",x.get('state')),("Readiness",x.get('readiness')),("Profile",x.get('profile')),("Artifact",x.get('artifact')),("Backup",x.get('backup')),("Available releases",x.get('available_releases')),("Endpoint",x.get('endpoint'))]
+        fields=[("Type",x['type']),("Integration",x.get('integration')),("Runtime",x.get('runtime')),("Policy",x.get('policy')),("Recommended",x.get('recommended_policy')),("Lifecycle",x.get('state')),("Health",x.get('health','UNKNOWN')),("Readiness",x.get('readiness')),("Host",x.get('host_health')),("Profile",x.get('profile')),("Artifact",x.get('artifact')),("Backup",x.get('backup')),("Available releases",x.get('available_releases')),("Endpoint",x.get('endpoint'))]
         return "<dl>"+"".join(f"<dt><strong>{html.escape(k)}</strong></dt><dd><pre>{html.escape(json.dumps(v,sort_keys=True) if isinstance(v,(dict,list)) else str(v))}</pre></dd>" for k,v in fields)+"</dl>"
 
 class Handler(BaseHTTPRequestHandler):
@@ -118,7 +127,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/admin/logout': self._logout(token); return
             if path=='/api/v1/audit': self._audit(); return
             if path.startswith("/api/"):
-                value=self.app.api(path)
+                value=self.app.api(path,parse_qs(urlparse(self.path).query))
                 if value is None:self.send_error(404); return
                 payload=json.dumps(_jsonable(value),sort_keys=True).encode()
                 self._send(200,payload,'application/json; charset=utf-8'); return
@@ -201,5 +210,5 @@ def main(argv=None):
     def backup_action(service):
         active=len(supervisor.instances[service].sessions) if supervisor and service in supervisor.instances else 0
         return backup.create(service,active_sessions=active).to_dict()
-    actions=AdminActionService(supervisor=supervisor,integration_registry=IntegrationRegistry.defaults(),backup=backup_action,install_roots={k:pathlib.Path(v) for k,v in roots.items()},archive_root=a.archive_root); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),actions=actions,require_auth=True,monitoring=MonitoringEngine((pathlib.Path(a.supervisor_state).parent if a.supervisor_state else pathlib.Path('/var/lib/ultimate-bbs-box')))); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
+    actions=AdminActionService(supervisor=supervisor,integration_registry=IntegrationRegistry.defaults(),backup=backup_action,install_roots={k:pathlib.Path(v) for k,v in roots.items()},archive_root=a.archive_root); monitor_root=(pathlib.Path(a.supervisor_state).parent if a.supervisor_state else pathlib.Path('/var/lib/ultimate-bbs-box')); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),actions=actions,require_auth=True,monitoring=MonitoringEngine(monitor_root,storage_roots={'state':monitor_root,'backups':backup_root,'archive':pathlib.Path(a.archive_root) if a.archive_root else monitor_root/'archive'})); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
 if __name__=="__main__": main()
