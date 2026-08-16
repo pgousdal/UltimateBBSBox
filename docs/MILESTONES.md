@@ -159,6 +159,13 @@ generic BBS bridge mappings, external secret references, and privacy-safe
 diagnostics are implemented. Public IRC and Tier-1 bridge qualification remain
 `HUMAN_REQUIRED`.
 
+### M6.7 — QWK / Blue Wave offline exchange
+
+Bounded QWK/Blue Wave packet metadata, distinct user/system exchange purposes,
+safe archive staging, generic BBS adapters, mappings, checkpoints, and
+privacy-safe diagnostics are implemented. QWKE and historical interoperability
+remain deferred/`HUMAN_REQUIRED`.
+
 ### M6.6 — FTN transport/core
 
 BinkP-oriented FTN network/address/peer models, safe spool and area intent,

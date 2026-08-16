@@ -213,6 +213,11 @@ installation is intentionally delegated to the host package manager; non-package
 third-party payloads remain subject to the M1 preservation-first policy. See
 [`docs/NETWORK-SERVICES.md`](docs/NETWORK-SERVICES.md).
 
+M6.7 adds bounded QWK/Blue Wave offline exchange infrastructure with separate
+user and system workflows, safe archive staging, and BBS mappings. See
+[docs/OFFLINE-EXCHANGE.md](docs/OFFLINE-EXCHANGE.md); no private packets are
+used in tests.
+
 M6.4 adds a conservative private-first NNTP/news model with bounded retention,
 generic BBS mappings, and optional explicit public modes. See
 [`docs/NEWS.md`](docs/NEWS.md); no public Usenet peering occurs in tests.

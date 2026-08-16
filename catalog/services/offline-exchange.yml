@@ -1,0 +1,14 @@
+kind: service
+schema_version: 1
+id: offline-exchange
+service:
+  type: infrastructure
+  title: UBB Offline Exchange
+  family: qwk-bluewave
+exposure:
+  main_menu: false
+  admin_only: true
+endpoint: offline-exchange
+lifecycle:
+  mode: on_demand
+  sharing: multiuser
