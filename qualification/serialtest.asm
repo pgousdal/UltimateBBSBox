@@ -130,9 +130,9 @@ write_file:
     pop cx
     ret
 
-ready_name db 'C:\\UBBQUAL\\READY.RST',0
-pass_name db 'C:\\UBBQUAL\\SERIAL.RST',0
-fail_name db 'C:\\UBBQUAL\\SERIAL.RST',0
+ready_name db 'D:\\UBBQUAL\\READY.RST',0
+pass_name db 'D:\\UBBQUAL\\SERIAL.RST',0
+fail_name db 'D:\\UBBQUAL\\SERIAL.RST',0
 ready_text db 'UBB_SERIAL_READY=1',13,10
 ready_len equ $-ready_text
 self_ready_text db 'UBB_SERIAL_VERSION=1',13,10,'MODE=SELFTEST',13,10,'EXECUTION=PASS',13,10,'WRITE_PATH=PASS',13,10

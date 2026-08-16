@@ -46,10 +46,8 @@ def parse_result(path: Path) -> dict[str, str]:
     return result
 
 
-def install_boot_files(drive_c: Path, serialtest: Path, mode: str = "EXCHANGE") -> None:
+def install_boot_files(drive_c: Path, serialtest: Path, mode: str = "EXCHANGE", image: bool = False) -> None:
     (drive_c / "UBBQUAL").mkdir(parents=True, exist_ok=True)
-    # The qualification binary is a tiny .COM image (NASM -f bin); retaining
-    # the .COM suffix avoids DOS attempting to parse it as an MZ executable.
     (drive_c / "UBBQUAL" / "UBBTEST.COM").write_bytes(serialtest.read_bytes())
     def replace_text(path: Path, content: str) -> None:
         # Preserved materialized files may be read-only; replacing within the
@@ -68,22 +66,28 @@ def install_boot_files(drive_c: Path, serialtest: Path, mode: str = "EXCHANGE") 
         root_command.write_bytes(command.read_bytes())
     replace_text(drive_c / "FDCONFIG.SYS",
         "SHELL=\\COMMAND.COM /E:2048 /P=\\AUTOEXEC.BAT\n")
-    replace_text(drive_c / "AUTOEXEC.BAT",
-        "@echo off\r\n"
-        f"C:\\UBBQUAL\\UBBTEST.COM {mode}\r\n")
+    if image:
+        autoexec = "@echo off\r\nmd D:\\UBBQUAL\r\n"
+        autoexec += "copy C:\\UBBQUAL\\UBBTEST.COM D:\\UBBQUAL\\UBBTEST.COM > nul\r\n"
+        autoexec += f"D:\\UBBQUAL\\UBBTEST.COM {mode}\r\n"
+    else:
+        autoexec = "@echo off\r\n" + f"C:\\UBBQUAL\\UBBTEST.COM {mode}\r\n"
+    replace_text(drive_c / "AUTOEXEC.BAT", autoexec)
 
 
 def run(args: argparse.Namespace) -> int:
     drive_c = args.drive_c.resolve()
-    install_boot_files(drive_c, args.serialtest.resolve(), args.mode)
+    install_boot_files(drive_c, args.serialtest.resolve(), args.mode, bool(args.image))
     master, slave = pty.openpty()
     raw_fd(master)
     raw_fd(slave)
     slave_path = os.ttyname(slave)
     config = args.workdir / "dosemu-serial.conf"
     config.parent.mkdir(parents=True, exist_ok=True)
+    image_spec = str(args.image) if args.image else ""
+    hdimage = f'"{drive_c} {image_spec}"' if args.image else f'"{drive_c}"'
     config.write_text(
-        f'$_hdimage = "{drive_c}"\n'
+        f'$_hdimage = {hdimage}\n'
         f'$_com1 = "{slave_path}"\n$_network = (off)\n', encoding="ascii")
     env = os.environ.copy()
     env.update({"HOME": str(args.home), "TERM": "xterm"})
@@ -163,6 +167,7 @@ def main() -> int:
     parser.add_argument("--library-path", default="")
     parser.add_argument("--timeout", type=float, default=30)
     parser.add_argument("--mode", choices=("SELFTEST", "EXCHANGE"), default="EXCHANGE")
+    parser.add_argument("--image", type=Path, default=None)
     args = parser.parse_args()
     try:
         return run(args)
