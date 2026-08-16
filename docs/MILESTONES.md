@@ -230,3 +230,9 @@ runtime qualification is claimed; see `docs/M9.1b-QUALIFICATION.md`.
 INN-oriented private/public mode intent, bounded groups and retention, generic
 BBS news adapters, mappings, feed references, and privacy-safe diagnostics are
 implemented. External peering and product qualification remain `HUMAN_REQUIRED`.
+### M9.1d — Prove or Reject DOSEMU2 Serial
+
+Incomplete: the Debian VM and pinned runtime were inspected, including correction
+of the library-path invocation, but the minimal direct COM1/PTY reproducer and
+serial root-cause evidence are not yet complete. See
+`docs/M9.1d-SERIAL-INVESTIGATION.md`.
