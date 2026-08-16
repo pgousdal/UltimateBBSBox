@@ -1,0 +1,28 @@
+{
+  "artifact_id": "mystic-linux-1.12.a48-x64-original",
+  "original_filename": "mys112a48_l64.rar",
+  "observed_hashes": {
+    "md5": "d0fbbe9356defd428e58f8bb8bf9a18f",
+    "sha1": "493c6b382b86bb1401ea1af97276efaf841b2ea0",
+    "sha256": "fb427b57d9627ef93008c561df807991bdd288b4a1fc1757dfb5bb5434f286a3"
+  },
+  "platform": "linux-x64",
+  "preservation_class": "original",
+  "role": "preservation_original",
+  "rights": {
+    "evidence": [
+      "The included description calls Mystic free software, while included documentation states copyright/all rights reserved; no explicit redistribution grant was found. Public download availability is not treated as permission."
+    ],
+    "export_from_archive": true,
+    "install_locally": true,
+    "preserve_locally": true,
+    "publish_to_bbs_filebase": false,
+    "redistribute_original": false,
+    "status": "unknown"
+  },
+  "software": "Mystic BBS",
+  "source_name": "Mystic BBS official downloads",
+  "source_url": "https://www.mysticbbs.com/downloads/mys112a48_l64.rar",
+  "upstream_smoke_acquired_at": "2026-08-16T09:09:44.147350Z",
+  "version": "1.12.A48"
+}

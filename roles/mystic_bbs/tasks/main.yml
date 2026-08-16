@@ -36,33 +36,32 @@
     - "{{ mystic_home }}/text"
     - "{{ mystic_home }}/logs"
 
-# NOTE: Verify the exact archive filename on
-# https://www.mysticbbs.com/downloads before first run - Mystic's
-# release filenames change slightly between versions.
 - name: Check if Mystic BBS binary is already installed
   ansible.builtin.stat:
     path: "{{ mystic_home }}/mis"
   register: mystic_binary
 
-- name: Download Mystic BBS release archive
-  ansible.builtin.get_url:
-    url: "{{ mystic_download_base }}/mystic_{{ mystic_version | replace('.', '_') }}_{{ mystic_arch }}.tar.gz"
-    dest: "/tmp/mystic_{{ mystic_version }}.tar.gz"
-    mode: "0644"
-  when: not mystic_binary.stat.exists
+- name: Check if preservation-first Mystic binary is installed
+  ansible.builtin.stat:
+    path: "{{ mystic_home }}/software/current/mis"
+  register: mystic_integration_binary
 
-- name: Extract Mystic BBS archive into install directory
-  ansible.builtin.unarchive:
-    src: "/tmp/mystic_{{ mystic_version }}.tar.gz"
-    dest: "{{ mystic_home }}"
-    remote_src: true
-    owner: "{{ mystic_user }}"
-    group: "{{ mystic_group }}"
-  when: not mystic_binary.stat.exists
+- name: Pause clean installation until the M7.1 workflow has installed Mystic
+  ansible.builtin.assert:
+    that:
+      - mystic_binary.stat.exists or mystic_integration_binary.stat.exists
+    fail_msg: >-
+      Host prerequisites are ready. Acquire and install Mystic through
+      scripts/ubb-integration.py, which verifies the M1 object and preserves
+      living state, then rerun this play. Direct network installation is forbidden.
+
+- name: Select legacy or preservation-first Mystic runtime directory
+  ansible.builtin.set_fact:
+    mystic_runtime_home: "{{ mystic_home if mystic_binary.stat.exists else mystic_home + '/software/current' }}"
 
 - name: Ensure Mystic binaries are executable
   ansible.builtin.file:
-    path: "{{ mystic_home }}/{{ item }}"
+    path: "{{ mystic_runtime_home }}/{{ item }}"
     mode: "0750"
     owner: "{{ mystic_user }}"
     group: "{{ mystic_group }}"
@@ -95,6 +94,7 @@
   notify:
     - reload systemd
     - restart mystic-bbs
+  when: mystic_manage_legacy_systemd | bool
 
 - name: Enable and start Mystic BBS service
   ansible.builtin.systemd:
@@ -102,12 +102,14 @@
     enabled: true
     state: started
     daemon_reload: true
+  when: mystic_manage_legacy_systemd | bool
 
 - name: Print first-run reminder
   ansible.builtin.debug:
     msg: >-
-      Mystic BBS binaries are deployed and the systemd service is running.
+      Mystic BBS binaries are deployed from a verified preservation object.
       Initial BBS configuration (message bases, menus, door registration in
       MIS) is interactive - log in as {{ mystic_user }} and run
-      '{{ mystic_home }}/mis -cfg' once to complete first-time setup, then
-      restart the service. See roles/mystic_bbs/README for door wiring notes.
+      '{{ mystic_runtime_home }}/mis -cfg' once to complete first-time setup, then
+      use the UBB supervisor. Set mystic_manage_legacy_systemd=true only during
+      migration when the M3 supervisor is not yet the lifecycle owner.

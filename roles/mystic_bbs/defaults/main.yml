@@ -2,3 +2,4 @@
 mystic_doors: []
 mystic_enable_telnet: true
 mystic_enable_ssh: false
+mystic_manage_legacy_systemd: false

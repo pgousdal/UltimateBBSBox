@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M5 adds product-neutral runtime adapters.** The existing Mystic-on-metal Ansible integration and M0–M4 layers are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
+**M7.1 adds the preservation-first Mystic/Linux reference integration.** M0–M5 remain independent layers, M6 remains the reserved network/core-services milestone, and museum integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -55,7 +55,16 @@ python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state tick
 python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state --json status mystic-main
 ```
 
-M5 supplies the default adapter-backed runtime driver. Existing services without runnable `runtime_config`—including the current Mystic deployment—remain managed by their current deployment; the supervisor fails closed rather than pretending it can control them. See [docs/SUPERVISOR.md](docs/SUPERVISOR.md).
+M5 supplies the default adapter-backed runtime driver. Services without runnable `runtime_config` fail closed rather than pretending they can be controlled; M7.1 now gives Mystic an explicit native declaration. See [docs/SUPERVISOR.md](docs/SUPERVISOR.md).
+
+M7.1 gives Mystic a production `native` runtime configuration and a preservation-first install workflow. A clean install can no longer fetch Mystic directly from Ansible. See [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) and [integrations/bbs/mystic/README.md](integrations/bbs/mystic/README.md).
+
+```bash
+python3 scripts/ubb-integration.py list
+python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive acquire mystic-linux
+python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive --install-root /opt/mystic install mystic-linux
+python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive --install-root /opt/mystic qualify mystic-linux
+```
 
 ## Session router
 
@@ -98,6 +107,7 @@ scripts/ubb-registry.py       registry inspection CLI
 scripts/ubb-supervisor.py     lifecycle supervisor CLI
 scripts/ubb-router.py         exposure policy inspection CLI
 scripts/ubb-runtime.py        runtime adapter diagnostics
+scripts/ubb-integration.py    museum integration workflow
 ```
 
 Validate everything with:
@@ -119,14 +129,14 @@ playbooks/
 roles/
   common/            Debian base/hardening
   serial_ports/      stable serial names + RS485 setup
-  mystic_bbs/        early Mystic integration
+  mystic_bbs/        Mystic host convergence and legacy migration service
   network_gateway/   firewall/fail2ban
   backup/            current Mystic-specific backup implementation
   monitoring/        node_exporter
 files/mystic_doors/   current Mystic .mpy door placeholders
 ```
 
-These roles continue to work during the transition. Later milestones will separate lifecycle, routing, backup/state, and actual BBS publication from individual BBS integrations.
+Existing `/opt/mystic/mis` deployments remain recognized. On a clean host the Mystic role prepares host prerequisites, then deliberately pauses until the M7.1 CLI has installed a verified M1 artifact; its systemd service is opt-in for migration because M3 is the intended lifecycle owner. Backup/state modernization and actual BBS publication remain later work.
 
 ## Current deployment
 
@@ -136,7 +146,7 @@ ansible-playbook playbooks/bootstrap.yml -u root -k
 ansible-playbook playbooks/site.yml
 ```
 
-The current Mystic installation still requires an assisted first-time `mis -cfg` configuration. This is now intentionally modeled as a valid `assisted` integration rather than considered an automation failure.
+Mystic still requires assisted first-time `mis -cfg` configuration. Version-screen and configured-message-base evidence are explicit requirements; login/menu qualification remains `HUMAN_REQUIRED` until observed. Public download availability is not treated as redistribution permission.
 
 ## Secrets
 

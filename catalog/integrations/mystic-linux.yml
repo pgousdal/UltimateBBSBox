@@ -5,14 +5,35 @@ target: mystic-main
 integration_revision: 1
 automation_level: assisted
 runtime: native
+artifacts:
+  - artifact_id: mystic-linux-1.12.a48-x64-original
+    role: preservation_original
+    required: true
+runtime_config:
+  executable: /opt/mystic/software/current/mis
+  argv:
+    - -bbs
+    - -telnet
+    - "6400"
+  working_directory: /opt/mystic/software/current
+  stop_timeout_seconds: 10
+  readiness:
+    type: tcp_port
+    host: 127.0.0.1
+    port: 6400
+  stream:
+    type: tcp
+    host: 127.0.0.1
+    port: 6400
+    connect_timeout_seconds: 5
 installation:
   steps:
     - type: acquire
     - type: verify
-    - type: automated
-      action: Run the existing mystic_bbs Ansible role.
+    - type: unpack
+      action: Install the verified M1 object without modifying preserved bytes.
     - type: manual
-      instruction: Complete first-time configuration using MIS.
+      instruction: Run /opt/mystic/software/current/mis -cfg as the Mystic service owner, complete initial configuration, and retain qualification evidence.
       evidence_required:
         - version_screen
         - configured_message_base

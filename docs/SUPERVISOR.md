@@ -103,4 +103,4 @@ Place global `--json`, `--catalog`, and `--state-dir` options before the command
 
 ## Explicitly deferred
 
-M4 owns authorized session/stream routing and M5 owns generic runtime adapters. Later work still owns menu presentation, terminal negotiation, authenticated local control IPC, remote-supervisor RPC, network services, product-specific maintenance implementations, BBS publication, and central UBB identity. Existing Mystic remains managed by its current Ansible role until a separately qualified generic runtime integration replaces that responsibility.
+M4 owns authorized session/stream routing and M5 owns generic runtime adapters. M7.1 declares Mystic through the native adapter and makes M3 the intended lifecycle owner; the legacy systemd unit is opt-in only during migration. Later work still owns menu presentation, terminal negotiation, authenticated local control IPC, remote-supervisor RPC, network services, product-specific maintenance implementations, BBS publication, and central UBB identity.

@@ -124,3 +124,17 @@ Manual installation steps are legitimate and must record required evidence rathe
 ## Existing Ansible roles
 
 The repository started as a Mystic-on-metal deployment. Those roles remain useful, but in M0 they are treated as an early integration rather than the architecture of UBB itself. Later milestones will move acquisition, preservation, lifecycle, routing, and publication concerns out of product-specific roles.
+
+## Museum integration boundary (M7.1)
+
+M7.1 proves the boundary with one real product declaration: Mystic/Linux. Trusted integration code orchestrates existing public APIs in the order `M1 acquire/verify -> product install/configure -> M5 runtime via M3 -> M4 route -> qualification`. It does not download directly, supervise its own process, implement routing, or make artifact presence equivalent to readiness.
+
+The production state remains split:
+
+- catalog manifests declare `mystic-main`, `mystic-local`, and `mystic-linux`;
+- M1 stores the original distribution and rights/provenance;
+- `integrations/bbs/mystic` owns product-specific extraction and assisted evidence;
+- digest-named software releases remain separate from Mystic's living `data`, `text`, `logs`, and `doors`;
+- M3 state and M4 sessions remain separate from both preservation and living data.
+
+The integration protocol has no assumptions about Linux archives or native execution. M7.2 ABBS and M7.3 AmiExpress can use preserved Amiga media, assisted workflows, FS-UAE, and bridge streams without altering generic core. See [INTEGRATIONS.md](INTEGRATIONS.md).

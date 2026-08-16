@@ -36,9 +36,9 @@ serial_devices:
     rs485_delay_rts_after_send_us: 0
 
 # --- mystic_bbs role -----------------------------------------------
-mystic_version: "1.12.A3"
+mystic_version: "1.12.A48"
 mystic_arch: "linux-x64"          # linux-x64 / linux-arm64
-mystic_download_base: "https://www.mysticbbs.com/downloads"
+mystic_artifact_id: "mystic-linux-1.12.a48-x64-original"
 mystic_user: "bbs"
 mystic_group: "bbs"
 mystic_home: "/opt/mystic"

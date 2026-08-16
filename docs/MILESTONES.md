@@ -47,6 +47,22 @@ Acceptance is implemented by the runtime protocol/registry, safe process adapter
 
 Add DNS, NTP/time, SMTP/POP3/IMAP, NNTP/INN, IRCd, FTP/TFTP, UUCP, FTN (binkd/Husky), QWK/REP, Blue Wave, modem/serial bridges, and rights/policy-controlled gateways.
 
-## M7+ — Museum integrations
+## M7 — Tier-1 and museum integrations
 
-Add BBS, Door, Interactive Fiction, and MUD/Online World integrations one at a time. Each integration is independently preserved, documented, installed, and qualified.
+Mystic, ABBS, and AmiExpress are equal Tier-1 priorities. The submilestone numbers express implementation sequence only, not product priority. Every museum integration is independently preserved, documented, installed, and qualified.
+
+### M7.1 — Mystic/Linux reference integration — COMPLETE
+
+The first complete preservation-first integration supplies a trusted minimal integration contract, production Mystic acquisition/rights declaration, verified content-addressed installation, separated living state, assisted `mis -cfg` evidence, native M5 runtime configuration, M3/M4 qualification hooks, explicit result vocabulary, CLI, downloader guard, offline tests, and documentation. A real temporary M1 acquisition/install smoke established the A48 SHA-256 and archive layout; production acquisition and first-run login/menu evidence remain operator-specific and are reported as `HUMAN_REQUIRED`, not fabricated as PASS.
+
+### M7.2 — ABBS/Amiga reference integration
+
+Use the M7.1 contract with preserved Amiga media, assisted installation, FS-UAE and an appropriate terminal bridge. No ABBS implementation or readiness claim exists yet.
+
+### M7.3 — AmiExpress/Amiga reference integration
+
+Use the same contract with independently preserved AmiExpress media and qualification. No AmiExpress implementation or readiness claim exists yet.
+
+### M7.4 — Tier-1 cross-integration hardening
+
+Harden shared behavior only after all three equal-priority Tier-1 integrations provide real evidence.

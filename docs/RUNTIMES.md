@@ -108,4 +108,4 @@ Configuration is trusted administrator/repository data but rejects unknown field
 
 ## Explicitly deferred
 
-M5 does not implement actual ABBS, NiKom, C-Net, Mystic migration, DOS setup, MAME/Hatari integration, software acquisition, archive ingest, physical serial hardware, remote-supervisor RPC, FTN/NNTP/SMTP/IRC, or BBS filebase publication. Those require separately preserved and qualified integrations after this generic plumbing.
+M5 does not contain product behavior. M7.1 now supplies Mystic's native runtime metadata outside runtime core; ABBS, NiKom, C-Net, DOS setup, MAME/Hatari integration, physical serial hardware, remote-supervisor RPC, FTN/NNTP/SMTP/IRC, and BBS filebase publication remain outside M5.
