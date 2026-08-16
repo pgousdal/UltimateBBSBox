@@ -249,7 +249,18 @@ class ProcessAdapter:
                 except OSError: pass
             for key in ("pid", "process_executable", "process_start_ticks"):
                 instance.runtime.pop(key, None)
-            return {"cleaned": True}
+        return {"cleaned": True}
+
+
+class DOSAdapter(ProcessAdapter):
+    """Generic DOS process adapter; product startup remains deployment metadata."""
+    runtime_name = "dos"
+
+    def validate_config(self, config):
+        validated = super().validate_config(config)
+        if config.get("dos_backend") not in (None, "dosemu2", "dosbox_x", "dosbox_staging", "qemu"):
+            raise RuntimeConfigError("unsupported DOS runtime backend")
+        return validated
 
 
 class FSUAEAdapter(ProcessAdapter):

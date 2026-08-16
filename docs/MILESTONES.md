@@ -189,6 +189,23 @@ qualification remains `HUMAN_REQUIRED`.
 M6 Network Services is complete as an architecture/configuration layer; no new
 protocols or live firewall changes are introduced.
 
+## M9 — BBS Museum Expansion
+
+### M9.1 — DOS BBS Runtime & Integration Foundation
+
+Generic DOS profiles, isolated golden/working deployment semantics, product-neutral
+M5 runtime integration, COM/PTY terminal metadata, and concurrency-safe multinode
+allocation are implemented. No concrete DOS BBS product is included; real emulator,
+FreeDOS boot, and historical compatibility qualification remain `HUMAN_REQUIRED`.
+
+### M9.2 — Mike's BBS / MBBS
+
+Planned; not implemented.
+
+### M9.3 — WWIV
+
+Planned; not implemented.
+
 ### M6.6 — FTN transport/core
 
 BinkP-oriented FTN network/address/peer models, safe spool and area intent,

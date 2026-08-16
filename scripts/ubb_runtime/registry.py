@@ -1,7 +1,7 @@
 """Deterministic built-in runtime adapter registry."""
 from __future__ import annotations
 
-from .adapters import (FSUAEAdapter, ProcessAdapter, QEMUAdapter, SIMHAdapter,
+from .adapters import (DOSAdapter, FSUAEAdapter, ProcessAdapter, QEMUAdapter, SIMHAdapter,
                        UnsupportedAdapter, VICEAdapter)
 from .errors import UnknownRuntimeError
 
@@ -14,6 +14,8 @@ class RuntimeAdapterRegistry:
     def defaults(cls):
         return cls({"native": ProcessAdapter(), "fs_uae": FSUAEAdapter(),
                     "vice": VICEAdapter(), "qemu": QEMUAdapter(), "simh": SIMHAdapter(),
+                    # DOS is modeled by ubb_dos and remains opt-in until a backend
+                    # and guest boot are qualified; preserve the M5 registry contract.
                     "dos": UnsupportedAdapter("dos"), "mame": UnsupportedAdapter("mame"),
                     "hatari": UnsupportedAdapter("hatari"), "remote": UnsupportedAdapter("remote")})
 

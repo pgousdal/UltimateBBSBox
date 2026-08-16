@@ -16,6 +16,10 @@ Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and on
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/MILESTONES.md](docs/MILESTONES.md).
 
+M9.1 adds the product-neutral DOS runtime foundation for future BBS integrations.
+See [docs/DOS-RUNTIME.md](docs/DOS-RUNTIME.md); no DOS BBS product or proprietary
+media is included.
+
 M8.4 adds derived health and bounded alert lifecycle monitoring. Use
 `python3 scripts/ubb-monitor.py evaluate --json` for a one-shot local check;
 see [docs/MONITORING.md](docs/MONITORING.md). Remote hosts without telemetry
