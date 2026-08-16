@@ -30,7 +30,7 @@ class DOSSerialQualificationTests(unittest.TestCase):
             MODULE.install_boot_files(drive, serial)
             autoexec = (drive / "AUTOEXEC.BAT").read_text()
             config = (drive / "FDCONFIG.SYS").read_text()
-        self.assertIn("UBBTEST.COM EXCHANGE COM1", autoexec)
+        self.assertIn("UBBTEST.COM EXCHANGE", autoexec)
         self.assertNotIn("CTTY", autoexec.upper())
         self.assertIn("SHELL=", config)
         self.assertLessEqual(len("UBBTEST"), 8)

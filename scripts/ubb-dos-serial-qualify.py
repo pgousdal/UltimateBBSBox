@@ -46,7 +46,7 @@ def parse_result(path: Path) -> dict[str, str]:
     return result
 
 
-def install_boot_files(drive_c: Path, serialtest: Path) -> None:
+def install_boot_files(drive_c: Path, serialtest: Path, mode: str = "EXCHANGE") -> None:
     (drive_c / "UBBQUAL").mkdir(parents=True, exist_ok=True)
     # The qualification binary is a tiny .COM image (NASM -f bin); retaining
     # the .COM suffix avoids DOS attempting to parse it as an MZ executable.
@@ -69,13 +69,13 @@ def install_boot_files(drive_c: Path, serialtest: Path) -> None:
     replace_text(drive_c / "FDCONFIG.SYS",
         "SHELL=\\COMMAND.COM /E:2048 /P=\\AUTOEXEC.BAT\n")
     replace_text(drive_c / "AUTOEXEC.BAT",
-        "@echo off\r\nmd C:\\UBBQUAL > nul\r\n"
-        "C:\\UBBQUAL\\UBBTEST.COM EXCHANGE COM1\r\n")
+        "@echo off\r\n"
+        f"C:\\UBBQUAL\\UBBTEST.COM {mode}\r\n")
 
 
 def run(args: argparse.Namespace) -> int:
     drive_c = args.drive_c.resolve()
-    install_boot_files(drive_c, args.serialtest.resolve())
+    install_boot_files(drive_c, args.serialtest.resolve(), args.mode)
     master, slave = pty.openpty()
     raw_fd(master)
     raw_fd(slave)
@@ -118,6 +118,16 @@ def run(args: argparse.Namespace) -> int:
                 break
         if not ready_path.exists() and not boot_seen:
             raise RuntimeError("timeout waiting for guest SERIAL.READY")
+        if args.mode == "SELFTEST":
+            while time.monotonic() < deadline and not result_path.exists():
+                time.sleep(0.05)
+            if not result_path.exists():
+                raise RuntimeError("SELFTEST result file was not produced")
+            result = parse_result(result_path)
+            if result.get("RESULT") != "PASS" or result.get("MODE") != "SELFTEST":
+                raise RuntimeError(f"SELFTEST reported failure: {result}")
+            print("PASS")
+            return 0
         os.write(master, EXPECTED_RX)
         reply = read_exact(master, len(EXPECTED_TX), deadline)
         if reply != EXPECTED_TX:
@@ -152,6 +162,7 @@ def main() -> int:
     parser.add_argument("--workdir", type=Path, required=True)
     parser.add_argument("--library-path", default="")
     parser.add_argument("--timeout", type=float, default=30)
+    parser.add_argument("--mode", choices=("SELFTEST", "EXCHANGE"), default="EXCHANGE")
     args = parser.parse_args()
     try:
         return run(args)

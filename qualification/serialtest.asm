@@ -3,8 +3,15 @@ bits 16
 org 100h
 
 start:
+    mov ax, ds
+    mov es, ax                     ; retain PSP for command-tail inspection
     push cs
     pop ds
+    cmp byte es:[80h], 8
+    jb exchange
+    cmp byte es:[81h], 'S'
+    je selftest
+exchange:
     mov ax, 00e3h                 ; BIOS INT 14h: 9600, 8N1
     xor dx, dx                     ; COM1
     int 14h
@@ -52,6 +59,31 @@ start:
     mov cx, pass_len
     call write_file
     mov ax, 4c00h
+    int 21h
+
+selftest:
+    mov dx, self_msg
+    mov ah, 09h
+    int 21h
+    mov si, ready_name
+    mov di, self_ready_text
+    mov cx, self_ready_len
+    call write_file
+    jc self_fail
+    mov si, pass_name
+    mov di, self_pass_text
+    mov cx, self_pass_len
+    call write_file
+    jc self_fail
+    mov ax, 4c00h
+    int 21h
+
+self_fail:
+    mov si, pass_name
+    mov di, self_fail_text
+    mov cx, self_fail_len
+    call write_file
+    mov ax, 4c01h
     int 21h
 
 recv_one:
@@ -103,6 +135,13 @@ pass_name db 'C:\\UBBQUAL\\SERIAL.RST',0
 fail_name db 'C:\\UBBQUAL\\SERIAL.RST',0
 ready_text db 'UBB_SERIAL_READY=1',13,10
 ready_len equ $-ready_text
+self_ready_text db 'UBB_SERIAL_VERSION=1',13,10,'MODE=SELFTEST',13,10,'EXECUTION=PASS',13,10,'WRITE_PATH=PASS',13,10
+self_ready_len equ $-self_ready_text
+self_pass_text db 'UBB_SERIAL_VERSION=1',13,10,'MODE=SELFTEST',13,10,'EXECUTION=PASS',13,10,'WRITE_PATH=PASS',13,10,'RESULT=PASS',13,10
+self_pass_len equ $-self_pass_text
+self_fail_text db 'UBB_SERIAL_VERSION=1',13,10,'MODE=SELFTEST',13,10,'EXECUTION=PASS',13,10,'WRITE_PATH=FAIL',13,10,'RESULT=FAIL',13,10
+self_fail_len equ $-self_fail_text
+self_msg db 'UBB-SELFTEST-EXECUTED',13,10,'$'
 pass_text db 'UBB_SERIAL_VERSION=1',13,10,'COM=1',13,10,'METHOD=BIOS',13,10,'RX=414243',13,10,'TX=5542422D4F4B',13,10,'RX_STATUS=PASS',13,10,'TX_STATUS=PASS',13,10,'RESULT=PASS',13,10
 pass_len equ $-pass_text
 fail_text db 'UBB_SERIAL_VERSION=1',13,10,'COM=1',13,10,'METHOD=BIOS',13,10,'RESULT=FAIL',13,10
