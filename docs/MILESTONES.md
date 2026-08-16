@@ -85,4 +85,20 @@ deployment recommendation while service manifests remain configurable.
 
 ### M8 — Admin Plane & Observatory
 
-Future work; not implemented by M7.4a.
+### M8.1 — Observatory/read model + admin CLI — COMPLETE
+
+The product-neutral read-only observatory aggregates M1–M7 state, exposes
+deterministic service/session/activity/alert/readiness/artifact/backup views,
+and deliberately introduces no write actions or network server.
+
+### M8.2 — Read-only web dashboard
+
+Future work; not implemented.
+
+### M8.3 — Authenticated admin actions + audit
+
+Future work; not implemented.
+
+### M8.4 — Alerts/remote hosts/monitoring hardening
+
+Future work; not implemented.

@@ -171,3 +171,9 @@ M7.4a adds authentic Aminet ABBS v1.1 (`abbs1_1.lha`) as a second release of
 the existing ABBS family and aligns Mystic/ABBS deployment recommendations
 with the appliance's normal `always_on` policy. Recommendations remain
 metadata; operators can select `on_demand` without reinstalling.
+
+M8.1 adds the local read-only Admin Observatory. `python3 scripts/ubb-admin.py
+status` provides a concise overview; `--json services`, `activity`, `alerts`,
+`readiness`, `artifacts`, and `backups` expose the same deterministic read
+model for operators and future dashboards. It performs no lifecycle, backup,
+promotion, or network-admin actions.
