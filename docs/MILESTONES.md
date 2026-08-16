@@ -45,7 +45,20 @@ Acceptance is implemented by the runtime protocol/registry, safe process adapter
 
 ## M6 — BBS network/core services
 
-Add DNS, NTP/time, SMTP/POP3/IMAP, NNTP/INN, IRCd, FTP/TFTP, UUCP, FTN (binkd/Husky), QWK/REP, Blue Wave, modem/serial bridges, and rights/policy-controlled gateways.
+Network Services — COMPLETE. M6.1–M6.8 are implemented as validated,
+product-neutral configuration, registry, observability, and diagnostics layers.
+
+### M6.1 — DNS + NTP — COMPLETE
+### M6.2 — Edge Node + Secure Overlay — COMPLETE
+### M6.3 — Internet Mail — COMPLETE
+### M6.4 — NNTP — COMPLETE
+### M6.5 — IRCd — COMPLETE
+### M6.6 — FTN Transport/Core — COMPLETE
+### M6.7 — QWK / Blue Wave / Exchange — COMPLETE
+### M6.8 — Network Hardening/Admin — COMPLETE
+
+Real daemon, provider, public-network, historical-reader, and Tier-1
+interoperability checks remain explicitly `HUMAN_REQUIRED` where not observed.
 
 ## M7 — Tier-1 and museum integrations
 
@@ -142,8 +155,8 @@ and public-identity intent, least-route policy, and conflict-safe ingress model
 are implemented as deterministic configuration/diagnostic fixtures. Provider
 connectivity and VPS qualification remain operator `HUMAN_REQUIRED` work.
 
-M6.3 SMTP/local mail, M6.4 NNTP, M6.5 IRCd, M6.6 FTN, M6.7 QWK/Blue Wave,
-and M6.8 network hardening remain future milestones.
+Those subsequent M6 milestones are documented below and are complete at the
+architecture/configuration level; real-world qualification remains explicit.
 
 ### M6.3 — Internet Mail
 

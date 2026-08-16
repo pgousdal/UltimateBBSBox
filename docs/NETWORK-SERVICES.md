@@ -25,5 +25,8 @@ packages or alter the host resolver or system clock. Package versions are
 therefore environment-specific and must be recorded during deployment
 qualification.
 
-M6.2 SMTP, M6.3 NNTP, M6.4 IRCd, and later FTN/exchange services are not part of
-this delivery.
+This document introduced M6.1. Subsequent M6 milestones now provide Edge,
+Internet Mail, NNTP, IRC, FTN, Offline Exchange, and network hardening; see
+[EDGE.md](EDGE.md), [MAIL.md](MAIL.md), [NEWS.md](NEWS.md), [IRC.md](IRC.md),
+[FTN.md](FTN.md), [OFFLINE-EXCHANGE.md](OFFLINE-EXCHANGE.md), and
+[NETWORK-HARDENING.md](NETWORK-HARDENING.md).
