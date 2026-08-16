@@ -47,7 +47,7 @@ class DashboardApp:
             if key=="backups": return [{"service_id":x["id"],"backup":x["backup"]} for x in data["services"]]
             return data[key]
         return None
-    def page(self,path):
+    def page(self,path,session=None):
         snap=self.snapshot(); data=snap.to_dict(); parts=[x for x in path.split("/") if x]
         title="Ultimate BBS Box Observatory"; body=""
         if path=="/" or path=="":
@@ -57,6 +57,7 @@ class DashboardApp:
             item=next((x for x in data["services"] if x["id"]==parts[1]),None)
             if item is None:return None
             body=f"<h1>{html.escape(item['title'])}</h1><p><code>{html.escape(item['id'])}</code></p>"+self._definition(item)
+            if session and self.require_auth: body += self._controls(item,session)
         elif parts and parts[0] in ("services","sessions","activity","alerts","readiness","artifacts","backups","hosts","audit"):
             key=parts[0]; body=f"<h1>{html.escape(key.title())}</h1>"
             if key=="services": body+=self._service_table(data["services"])
@@ -72,6 +73,20 @@ class DashboardApp:
         else:return None
         nav="<nav><a href='/'>Overview</a><a href='/services'>Services</a><a href='/sessions'>Sessions</a><a href='/activity'>Activity</a><a href='/alerts'>Alerts</a><a href='/readiness'>Readiness</a><a href='/artifacts'>Artifacts</a><a href='/backups'>Backups</a><a href='/hosts'>Hosts</a><a href='/audit'>Audit</a></nav>"
         return "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width'><title>"+html.escape(title)+"</title><style>"+CSS+"</style></head><body><main>"+nav+body+"</main></body></html>"
+    def _controls(self,item,session):
+        csrf=html.escape(session['csrf']); sid=html.escape(item['id']); role=session['role']; forms=[]
+        if role in ('operator','administrator'):
+            for action,label in (('start','Start'),('stop','Stop'),('restart','Restart'),('backup','Backup'),('qualify','Qualify')):
+                forms.append(f"<form method='post' action='/api/v1/admin/services/{sid}/{action}'><input type='hidden' name='csrf' value='{csrf}'><button>{label}</button></form>")
+            if item.get('available_releases'):
+                forms.append(f"<form method='post' action='/api/v1/admin/services/{sid}/maintenance'><input type='hidden' name='csrf' value='{csrf}'><input name='job_id' placeholder='registered job'><button>Run maintenance</button></form>")
+        if role=='administrator':
+            for mode in ('always_on','on_demand'):
+                forms.append(f"<form method='post' action='/api/v1/admin/services/{sid}/lifecycle'><input type='hidden' name='csrf' value='{csrf}'><input type='hidden' name='mode' value='{mode}'><button>Set {mode}</button></form>")
+            if item.get('integration')=='amiexpress-amiga':
+                forms.append(f"<form method='post' action='/api/v1/admin/integrations/amiexpress/promote'><input type='hidden' name='csrf' value='{csrf}'><input name='release' placeholder='candidate release'><button>Promote candidate</button></form>")
+                forms.append(f"<form method='post' action='/api/v1/admin/integrations/amiexpress/rollback'><input type='hidden' name='csrf' value='{csrf}'><button>Rollback</button></form>")
+        return "<h2>Admin actions</h2><div class='cards'>"+''.join(forms)+"</div>"
     def _service_table(self,items):
         rows="".join(f"<tr><td><a href='/service/{html.escape(x['id'])}'>{html.escape(x['title'])}</a></td><td>{html.escape(x['type'])}</td><td>{html.escape(str(x['release'] or 'UNKNOWN'))}</td><td>{html.escape(str(x['policy'] or 'UNKNOWN'))}</td><td><span class='badge'>{html.escape(x['state'])}</span></td><td>{x['active_sessions']}</td><td>{html.escape(x['readiness'])}</td><td>{html.escape(x['host_health'])}</td></tr>" for x in items)
         return "<table><thead><tr><th>Name</th><th>Type</th><th>Release</th><th>Policy</th><th>State</th><th>Callers</th><th>Readiness</th><th>Host</th></tr></thead><tbody>"+rows+"</tbody></table>"
@@ -94,7 +109,7 @@ class Handler(BaseHTTPRequestHandler):
                 if value is None:self.send_error(404); return
                 payload=json.dumps(_jsonable(value),sort_keys=True).encode()
                 self.send_response(200); self.send_header("Content-Type","application/json; charset=utf-8"); self.send_header("Content-Length",str(len(payload))); self.end_headers(); self.wfile.write(payload); return
-            page=self.app.page(path)
+            page=self.app.page(path,self.app.authenticate(token) if self.app.require_auth else None)
             if page is None:self.send_error(404); return
             payload=page.encode(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8"); self.send_header("Content-Security-Policy","default-src 'self'; style-src 'unsafe-inline'"); self.send_header("X-Content-Type-Options","nosniff"); self.send_header("Content-Length",str(len(payload))); self.end_headers(); self.wfile.write(payload)
         except Exception: self.send_error(503,"observatory temporarily unavailable")
@@ -112,9 +127,10 @@ class Handler(BaseHTTPRequestHandler):
         token=self._cookie('ubb_admin'); session=self.app.authenticate(token)
         if not session:self._unauthorized(); return
         if path.startswith('/api/v1/admin/'):
-            supplied=self.headers.get('X-CSRF-Token') or parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()).get('csrf',[''])[0] if self.headers.get('Content-Length') else self.headers.get('X-CSRF-Token')
+            body=parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()) if self.headers.get('Content-Length') else {}
+            supplied=self.headers.get('X-CSRF-Token') or body.get('csrf',[''])[0]
             if not supplied or not secrets.compare_digest(supplied,session['csrf']): self._send(403,'CSRF rejected'); return
-            self._action(path,session); return
+            self._action(path,session,body); return
         self.send_error(405)
     def do_PUT(self): self.send_error(405)
     def do_DELETE(self): self.send_error(405)
@@ -133,13 +149,20 @@ class Handler(BaseHTTPRequestHandler):
         if token:self.app.sessions.remove(token)
         self._send(303,'',headers={'Location':'/admin/login','Set-Cookie':'ubb_admin=; Max-Age=0; HttpOnly; SameSite=Strict'})
     def _audit(self): self._send(200,json.dumps(self.app.audit.read() if self.app.audit else [],sort_keys=True).encode(),'application/json; charset=utf-8')
-    def _action(self,path,session):
+    def _action(self,path,session,form=None):
         parts=[x for x in path.split('/') if x]; action=parts[-1]; target=parts[-2] if len(parts)>4 else 'integration'; result='failure'; message=''
         try:
             if not self.app.actions: raise RuntimeError('action service unavailable')
+            form=form or {}
             if action=='start': value=self.app.actions.start(target,session['role'])
             elif action=='stop': value=self.app.actions.stop(target,session['role'])
             elif action=='restart': value=self.app.actions.restart(target,session['role'])
+            elif action=='maintenance': value=self.app.actions._job(target,form.get('job_id',[''])[0],session['role'])
+            elif action=='backup': value=self.app.actions.backup(target,session['role'])
+            elif action=='qualify': value=self.app.actions.qualify(form.get('integration',[target])[0],form.get('release',[''])[0],session['role'])
+            elif action=='promote': value=self.app.actions.promote(form.get('integration',['amiexpress-amiga'])[0],form.get('release',[''])[0],session['role'])
+            elif action=='rollback': value=self.app.actions.rollback(form.get('integration',['amiexpress-amiga'])[0],session['role'])
+            elif action=='lifecycle': value=self.app.actions.lifecycle(target,form.get('mode',[''])[0],session['role'])
             else: raise ValueError('unsupported action')
             result='success'; message='action delegated'; self._send(200,json.dumps({'result':result,'value':_jsonable(value)},sort_keys=True),'application/json; charset=utf-8')
         except PermissionError as exc: result='denied'; message=str(exc); self._send(403,json.dumps({'error':message}),'application/json; charset=utf-8')

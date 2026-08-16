@@ -29,3 +29,8 @@ The dashboard remains loopback-bound by default and has no custom TLS, public
 admin listener, caller identity, or unrestricted-root requirement. Use a VPN,
 SSH tunnel, or authenticated reverse proxy for remote access. M8.4 covers
 further privilege separation and monitoring hardening.
+
+M8.3b completes registered maintenance, backup, qualification, and AmiExpress
+promotion/rollback routes. Operators use the same delegated action service as
+the web/API layer; administrators alone may change lifecycle policy or release
+pointers. Dashboard forms are role-filtered and every attempt is audited.
