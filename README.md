@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M4 adds exposure-enforcing session routing.** The existing Mystic-on-metal Ansible integration, preservation archive, registry, and lifecycle supervisor are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
+**M5 adds product-neutral runtime adapters.** The existing Mystic-on-metal Ansible integration and M0–M4 layers are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -55,7 +55,7 @@ python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state tick
 python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state --json status mystic-main
 ```
 
-The bundled production driver only supports generic `local_process` endpoints. Existing TCP/remote services remain managed by their current deployment until future runtime adapters exist; the supervisor fails closed rather than pretending it can control them. See [docs/SUPERVISOR.md](docs/SUPERVISOR.md).
+M5 supplies the default adapter-backed runtime driver. Existing services without runnable `runtime_config`—including the current Mystic deployment—remain managed by their current deployment; the supervisor fails closed rather than pretending it can control them. See [docs/SUPERVISOR.md](docs/SUPERVISOR.md).
 
 ## Session router
 
@@ -69,6 +69,18 @@ python3 scripts/ubb-router.py --json services --direct
 ```
 
 The authorization CLI inspects declared route policy; actual via-service opens additionally require an active origin session. UBB does not authenticate destination users or log terminal content. See [docs/ROUTER.md](docs/ROUTER.md).
+
+## Runtime adapters
+
+M5 maps `integration.runtime` to built-in adapters for native processes, FS-UAE, VICE, QEMU, and SIMH. Runtime metadata supplies explicit executable/argv paths, environment, readiness, and PTY/stdio/TCP stream configuration; adapters contain no BBS product rules.
+
+```bash
+python3 scripts/ubb-runtime.py list-adapters
+python3 scripts/ubb-runtime.py --json list-adapters
+python3 scripts/ubb-runtime.py validate SERVICE_ID
+```
+
+Lifecycle start/stop remains in `ubb-supervisor.py`. DOS, MAME, Hatari, and remote-supervisor RPC are registered as explicitly deferred rather than pretending to work. See [docs/RUNTIMES.md](docs/RUNTIMES.md).
 
 ## Contracts
 
@@ -85,6 +97,7 @@ scripts/ubb-archive.py        preservation archive CLI
 scripts/ubb-registry.py       registry inspection CLI
 scripts/ubb-supervisor.py     lifecycle supervisor CLI
 scripts/ubb-router.py         exposure policy inspection CLI
+scripts/ubb-runtime.py        runtime adapter diagnostics
 ```
 
 Validate everything with:

@@ -37,9 +37,11 @@ Implement main-menu exposure, via-BBS-only services, stream handoff, terminal me
 
 Acceptance is implemented by the explicit session model/state graph, exposure policy, active-origin anchoring, M2 resolution, M3 hold ownership, extensible terminal metadata, raw TCP and injectable stream contracts, generic handoff/return semantics, idempotent teardown, metadata-only JSONL journal, CLI inspection, and deterministic tests. Emulator transports, actual BBS door integration, authenticated IPC, and network services remain later milestones.
 
-## M5 — Runtime adapters
+## M5 — Runtime adapters — COMPLETE
 
 Add adapters incrementally: native Linux, DOS, FS-UAE, VICE, MAME, Hatari, QEMU, SIMH, and others as integrations require them.
+
+Acceptance is implemented by the runtime protocol/registry, safe process adapter, PTY/stdio/TCP streams, five generic readiness strategies, FS-UAE/VICE/QEMU/SIMH process specializations, M3/M4 bridges, conservative PID reconciliation, diagnostics CLI, and fake-executable tests. DOS, MAME, Hatari, remote RPC, and real product integrations are explicitly deferred.
 
 ## M6 — BBS network/core services
 

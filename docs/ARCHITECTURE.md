@@ -39,6 +39,12 @@ Router sessions have their own explicit state machine, separate from M3 runtime 
 
 M4 provides raw generic TCP and injected stream contracts. It does not perform Telnet negotiation, suspend a real BBS stream, connect SSH/serial/remote-supervisor endpoints by default, build menus, synchronize accounts, or implement product/runtime adapters. Handoff and return-to-origin are modeled as a parent/child session relationship for later integrations.
 
+## M5 runtime boundary
+
+M5 maps the generic `integration.runtime` enum to a deterministic built-in adapter registry. Adapters receive only validated `runtime_config`; they know process/emulator mechanics, never the BBS or guest product. M3 remains the sole lifecycle state machine through an adapter-backed driver bridge, while M4 may obtain an adapter PTY, stdio, or raw TCP stream only after its lifecycle hold succeeds.
+
+Runtime process identity (PID, `/proc` executable, process start ticks, and command digest) is stored in M3's separate runtime state. Reconciliation adopts a recorded process only when identity can be proven, avoiding blind PID reuse. Native, FS-UAE, VICE, QEMU, and SIMH share bounded process-group cleanup and generic readiness. DOS, MAME, Hatari, physical serial, and remote RPC fail explicitly pending later work.
+
 ## Lifecycle
 
 Every runnable service can select independently:

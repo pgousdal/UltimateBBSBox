@@ -37,7 +37,7 @@ class Router:
     TERMINATION_REASONS = frozenset(("caller_closed", "endpoint_eof", "transport_error",
                                      "handoff_replaced", "parent_closed", "open_failed", "shutdown"))
     def __init__(self, registry, supervisor, state_dir, connectors=None, clock=None,
-                 connect_timeout=10.0, id_factory=None):
+                 connect_timeout=10.0, id_factory=None, runtime_stream_resolver=None):
         self.registry = registry
         self.supervisor = supervisor
         self.policy = RoutePolicy(registry)
@@ -45,6 +45,7 @@ class Router:
         self.clock = clock or getattr(supervisor, "clock", None)
         self.connect_timeout = connect_timeout
         self.id_factory = id_factory or (lambda: uuid.uuid4().hex)
+        self.runtime_stream_resolver = runtime_stream_resolver
         self.connectors = {"tcp": TCPConnector(), **(connectors or {})}
         self.sessions: dict[str, Session] = {}
         self._locks: dict[str, threading.RLock] = {}
@@ -120,10 +121,13 @@ class Router:
                 self._transition(session, SessionState.ACQUIRING, "authorized")
                 session.lifecycle_session_id = self.supervisor.acquire_session(session.target_service)
                 self._transition(session, SessionState.CONNECTING, "lifecycle_acquired")
-                endpoint_type = session.endpoint["type"]
-                connector = self.connectors.get(endpoint_type, UnsupportedConnector(endpoint_type))
-                timeout = float(session.endpoint.get("connect_timeout_seconds", self.connect_timeout))
-                session.stream = connector.connect(session.endpoint, timeout)
+                if self.runtime_stream_resolver is not None:
+                    session.stream = self.runtime_stream_resolver(session.target_service)
+                else:
+                    endpoint_type = session.endpoint["type"]
+                    connector = self.connectors.get(endpoint_type, UnsupportedConnector(endpoint_type))
+                    timeout = float(session.endpoint.get("connect_timeout_seconds", self.connect_timeout))
+                    session.stream = connector.connect(session.endpoint, timeout)
                 self._transition(session, SessionState.ACTIVE, "connected")
                 return SessionHandle(self, session.id)
             except Exception as exc:

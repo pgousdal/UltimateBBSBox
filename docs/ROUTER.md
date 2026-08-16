@@ -72,7 +72,7 @@ Built in:
 
 EOF (`read()` returning empty bytes) closes the session with `endpoint_eof`. Explicit close racing EOF is safe because teardown is guarded per session and release is marked exactly once. TCP half-close is treated as endpoint EOF for the routed session; M4 does not attempt prolonged half-duplex operation.
 
-SSH, serial, local-process/PTY, and remote-supervisor streams raise `UnsupportedTransportError` unless a caller injects a product-neutral connector. M4 does not fake connectivity, source credentials, or implement remote RPC.
+SSH, physical serial, and remote-supervisor streams raise `UnsupportedTransportError` unless a caller injects a product-neutral connector. M5 adds an optional runtime stream resolver for integration-backed PTY, stdio, and raw TCP streams. M4 does not fake connectivity, source credentials, or implement remote RPC.
 
 ## Handoff and return
 
@@ -102,4 +102,4 @@ The CLI is a read-only policy/development tool. `authorize --via` confirms that 
 
 ## Explicitly deferred
 
-M5+ owns FS-UAE, VICE, DOS, MAME, Hatari, QEMU, SIMH, SSH credential integration, serial/PTY adapters, remote-supervisor RPC, actual Mystic/ABBS door handoff, terminal negotiation/emulation, BBS user/security synchronization, central identity, FTN/NNTP/SMTP/UUCP/IRC services, web UI, and a polished ANSI menu. M4 supplies only the generic authorized routing/session contract those layers can call.
+M5 now supplies generic native, FS-UAE, VICE, QEMU, SIMH, PTY, stdio, and TCP runtime plumbing. Later work still owns DOS/MAME/Hatari support, SSH credentials, physical serial, remote-supervisor RPC, actual Mystic/ABBS door handoff, terminal negotiation/emulation, BBS user/security synchronization, central identity, FTN/NNTP/SMTP/UUCP/IRC services, web UI, and a polished ANSI menu. M4 remains the generic authorized routing/session contract those layers call.

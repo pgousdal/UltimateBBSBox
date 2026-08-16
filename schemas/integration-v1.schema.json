@@ -13,6 +13,49 @@
     "integration_revision": {"type": "integer", "minimum": 1, "default": 1},
     "automation_level": {"enum": ["fully_automated", "assisted", "manual_install", "preservation_only"]},
     "runtime": {"enum": ["native", "fs_uae", "vice", "dos", "mame", "hatari", "qemu", "simh", "remote"]},
+    "runtime_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executable": {"type": "string", "pattern": "^/", "minLength": 2},
+        "argv": {"type": "array", "items": {"type": "string"}},
+        "config_file": {"type": "string", "pattern": "^/", "minLength": 2},
+        "working_directory": {"type": "string", "pattern": "^/", "minLength": 2},
+        "environment": {"type": "object", "propertyNames": {"pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}, "additionalProperties": {"type": "string"}},
+        "inherit_environment": {"type": "array", "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}, "uniqueItems": true},
+        "pty": {"type": "boolean"},
+        "stop_timeout_seconds": {"type": "number", "minimum": 0},
+        "graceful_stop_command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "readiness": {
+          "type": "object", "additionalProperties": false, "required": ["type"],
+          "properties": {
+            "type": {"enum": ["immediate", "process_alive", "tcp_port", "file_exists", "command_exit_zero"]},
+            "host": {"type": "string"},
+            "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+            "path": {"type": "string", "pattern": "^/"},
+            "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            "timeout_seconds": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "allOf": [
+            {"if": {"properties": {"type": {"const": "tcp_port"}}}, "then": {"required": ["host", "port"]}},
+            {"if": {"properties": {"type": {"const": "file_exists"}}}, "then": {"required": ["path"]}},
+            {"if": {"properties": {"type": {"const": "command_exit_zero"}}}, "then": {"required": ["command"]}}
+          ]
+        },
+        "stream": {
+          "type": "object", "additionalProperties": false, "required": ["type"],
+          "properties": {
+            "type": {"enum": ["pty", "tcp", "stdio"]},
+            "host": {"type": "string"},
+            "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+            "connect_timeout_seconds": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "allOf": [
+            {"if": {"properties": {"type": {"const": "tcp"}}}, "then": {"required": ["host", "port"]}}
+          ]
+        }
+      }
+    },
     "installation": {
       "type": "object",
       "additionalProperties": false,

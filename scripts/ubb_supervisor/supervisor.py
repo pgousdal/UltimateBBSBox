@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import datetime as dt
+import pathlib
 import threading
 import uuid
 
 from ubb_registry import Registry
 
 from .clock import SystemClock
-from .drivers import LocalProcessDriver, UnsupportedDriver
 from .errors import (DriverError, MaintenanceError, ReadinessTimeoutError,
                      RestartLimitExceededError, ServiceBusyError,
                      ServiceNotFoundError, SupervisorError)
@@ -23,14 +23,20 @@ STALE_STATES = {LifecycleState.STARTING, LifecycleState.READY, LifecycleState.ST
 
 
 class Supervisor:
-    def __init__(self, registry: Registry, state_dir, driver_resolver=None, clock=None, poll_interval: float = 0.1):
+    def __init__(self, registry: Registry, state_dir, driver_resolver=None, clock=None, poll_interval: float = 0.1,
+                 runtime_manager=None):
         self.registry = registry
         self.store = StateStore(state_dir)
         self.clock = clock or SystemClock()
         self.poll_interval = poll_interval
-        self.driver_resolver = driver_resolver or self._default_driver
-        self._local_driver = LocalProcessDriver()
-        self._unsupported_driver = UnsupportedDriver()
+        self.runtime_manager = runtime_manager
+        if driver_resolver is None:
+            if self.runtime_manager is None:
+                from ubb_runtime import RuntimeManager
+                self.runtime_manager = RuntimeManager(registry, pathlib.Path(state_dir) / "runtime")
+            self.driver_resolver = self.runtime_manager.driver_for
+        else:
+            self.driver_resolver = driver_resolver
         self._locks = {service_id: threading.RLock() for service_id in registry.services}
         self._jobs_running: set[tuple[str, str]] = set()
         self.instances: dict[str, InstanceState] = {}
@@ -38,10 +44,6 @@ class Supervisor:
             loaded = self.store.load(service_id)
             self.instances[service_id] = loaded or InstanceState(service_id, f"{service_id}:shared")
         self._validate_jobs()
-
-    def _default_driver(self, service):
-        endpoint = self.registry.endpoint(service.endpoint_id)
-        return self._local_driver if endpoint.type == "local_process" else self._unsupported_driver
 
     def _service(self, service_id):
         try:
@@ -134,6 +136,11 @@ class Supervisor:
             instance.restart_exhausted = False
             self._persist(instance)
         except Exception as exc:
+            try:
+                if driver.status(instance, declaration).get("alive"):
+                    driver.stop(instance, declaration)
+            except Exception:
+                pass
             self._mark_failed_locked(service, instance, exc, "start_failure")
             self._restart_after_failure_locked(service, instance)
             if instance.state == LifecycleState.FAILED:

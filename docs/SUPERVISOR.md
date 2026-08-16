@@ -51,9 +51,9 @@ D. always-on multiuser UNIX/VMS-style service
 
 ## Drivers and readiness
 
-`RuntimeDriver` defines `start`, `stop`, `status`, `is_ready`, and `run_maintenance`, returning structured mappings. `FakeDriver` provides deterministic tests. `LocalProcessDriver` is the only bundled production driver: it starts a trusted `local_process` endpoint argument vector without a shell, records the PID, checks process liveness, and can run an explicit maintenance command argument vector.
+`RuntimeDriver` defines `start`, `stop`, `status`, `is_ready`, and `run_maintenance`, returning structured mappings. `FakeDriver` remains available for deterministic tests. M5 now supplies the default driver bridge, resolving `integration.runtime` to a product-neutral adapter. The earlier `LocalProcessDriver` remains import-compatible, but default production execution uses `ubb_runtime`.
 
-Readiness types are `immediate`, `process_alive`, `command_probe`, and `driver_specific`. The driver interprets them; command probes use argument vectors and no shell. Startup polling uses `startup_timeout_seconds`, and timeout enters `failed` before restart policy is considered. Unsupported endpoint/runtime combinations fail closed pending M5 adapters.
+Readiness types are `immediate`, `process_alive`, `command_probe`, and `driver_specific`. The driver interprets them; M5 driver-specific readiness adds TCP port, file, and command-exit strategies. Startup polling uses `startup_timeout_seconds`, and timeout enters `failed` before restart policy is considered. Unsupported runtimes fail closed.
 
 ## Failure and restart
 
@@ -103,4 +103,4 @@ Place global `--json`, `--catalog`, and `--state-dir` options before the command
 
 ## Explicitly deferred
 
-M4 and later own terminal byte streams, menu generation, exposure/access enforcement, door/session handoff, terminal negotiation, authenticated local control IPC, remote-supervisor RPC, emulator adapters, network services, product-specific maintenance implementations, BBS publication, and central UBB identity. Existing Mystic remains managed by its current Ansible role until a separately qualified generic runtime integration replaces that responsibility.
+M4 owns authorized session/stream routing and M5 owns generic runtime adapters. Later work still owns menu presentation, terminal negotiation, authenticated local control IPC, remote-supervisor RPC, network services, product-specific maintenance implementations, BBS publication, and central UBB identity. Existing Mystic remains managed by its current Ansible role until a separately qualified generic runtime integration replaces that responsibility.
