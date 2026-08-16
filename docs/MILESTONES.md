@@ -213,6 +213,12 @@ generic BBS adapters, deterministic mailer/tosser configuration, and privacy-saf
 diagnostics are implemented. Real peer and Tier-1 qualification remain
 `HUMAN_REQUIRED`.
 
+### M9.1a — Real DOSEMU2 + FreeDOS Qualification
+
+Incomplete on the current host: DOSEMU2 and an approved M1-preserved FreeDOS
+artifact are unavailable, so no real boot or COM qualification is claimed. See
+`docs/M9.1a-QUALIFICATION.md`.
+
 ### M6.4 — NNTP / Usenet-style news
 
 INN-oriented private/public mode intent, bounded groups and retention, generic

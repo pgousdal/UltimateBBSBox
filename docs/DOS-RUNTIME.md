@@ -47,7 +47,9 @@ arbitrary filesystem, or unrestricted IP networking. Physical RS-232 is modeled
 but not required for tests. Future M9.2 products own their startup commands,
 dropfiles, and BBS-specific locking qualification; no product branch exists here.
 
-FreeDOS acquisition, if performed later, must pass through M1 preservation,
+M9.1a host inspection found no DOSEMU2 or approved FreeDOS artifact, so real
+boot/COM qualification is currently `HUMAN_REQUIRED`; see
+[M9.1a-QUALIFICATION.md](M9.1a-QUALIFICATION.md). FreeDOS acquisition, if performed later, must pass through M1 preservation,
 provenance, checksums, and rights metadata. Historical BBS compatibility,
 multinode file-lock behavior, physical serial, and real emulator/guest boot are
 `HUMAN_REQUIRED`.

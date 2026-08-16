@@ -6,8 +6,11 @@ does not install or download DOS media, and it does not contain BBS product logi
 from __future__ import annotations
 
 import argparse
-import copy
+import datetime
+import json
+import platform
 import re
+import shutil
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -219,16 +222,48 @@ def qualification(deployment: DOSDeployment, *, backend_available: bool = False,
             "status": "PASS" if all(x["status"] == "PASS" for x in checks) else "HUMAN_REQUIRED"}
 
 
+def backend_evidence(backend: str = "dosemu2") -> dict:
+    """Report installed backend evidence without installing or downloading anything."""
+    executable = shutil.which(backend)
+    return {"backend": backend, "executable": executable, "available": bool(executable),
+            "version": None, "source": "PATH" if executable else None,
+            "host": {"os": platform.platform(), "architecture": platform.machine()}}
+
+
+def boot_marker_ready(output: bytes | str, marker: str = "UBB_DOS_READY") -> bool:
+    """Require an explicit guest-produced marker; process liveness is insufficient."""
+    if isinstance(output, bytes):
+        output = output.decode("ascii", errors="replace")
+    return marker in output.splitlines()
+
+
+def qualification_evidence(check_id: str, state: str, *, reason: str, backend: dict | None = None,
+                           profile: str = "freedos-bbs", evidence: dict | None = None) -> dict:
+    if state not in ("PASS", "FAIL", "HUMAN_REQUIRED", "SKIP"):
+        raise DOSConfigError("invalid qualification state")
+    return {"check_id": check_id, "state": state,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "backend": backend or backend_evidence(), "profile": profile,
+            "reason": reason, "evidence": evidence or {}}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Inspect product-neutral DOS runtime profiles")
-    parser.add_argument("command", choices=("profiles", "validate-profile", "qualification"))
+    parser.add_argument("command", choices=("profiles", "validate-profile", "qualification", "runtime-info", "qualify"))
     parser.add_argument("value", nargs="?")
     args = parser.parse_args(argv)
     profiles = default_profiles()
-    if args.command == "profiles": print({k: v.guest_family for k, v in profiles.items()})
+    if args.command == "profiles": print(json.dumps({k: v.guest_family for k, v in profiles.items()}, sort_keys=True))
     elif args.command == "validate-profile":
         if args.value not in profiles: raise SystemExit("unknown DOS profile")
         print("valid")
+    elif args.command == "runtime-info": print(json.dumps(backend_evidence(), sort_keys=True))
+    elif args.command == "qualify":
+        evidence = [qualification_evidence("dosemu2-installed", "PASS" if backend_evidence()["available"] else "HUMAN_REQUIRED",
+                                           reason="DOSEMU2 executable discovery; no installation performed"),
+                    qualification_evidence("freedos-media", "HUMAN_REQUIRED",
+                                           reason="No approved M1-preserved FreeDOS artifact is available")]
+        print(json.dumps(evidence, indent=2, sort_keys=True))
     else: print("no production DOS service configured")
 
 

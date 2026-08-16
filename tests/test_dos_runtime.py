@@ -6,7 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from ubb_dos import (COMPort, DOSConfigError, DOSDeployment, DOSProfile,
                      DriveMapping, MachineProfile, NodeAllocator, TerminalProfile,
-                     default_profiles, qualification, validate_dos_filename)
+                     backend_evidence, boot_marker_ready, default_profiles, qualification,
+                     qualification_evidence, validate_dos_filename)
 from ubb_runtime import DOSAdapter, RuntimeAdapterRegistry, UnsupportedAdapter
 
 
@@ -52,6 +53,13 @@ class DOSRuntimeTests(unittest.TestCase):
     def test_qualification_is_honest_without_real_runtime(self):
         d = DOSDeployment("bbs", default_profiles()["freedos-bbs"], Path("/gold"), Path("/work"))
         self.assertEqual(qualification(d)["status"], "HUMAN_REQUIRED")
+
+    def test_real_evidence_requires_guest_marker_and_has_machine_readable_state(self):
+        self.assertFalse(boot_marker_ready(b"process alive\n"))
+        self.assertTrue(boot_marker_ready(b"FreeDOS\nUBB_DOS_READY\n"))
+        item = qualification_evidence("boot", "HUMAN_REQUIRED", reason="runtime unavailable")
+        self.assertEqual(item["state"], "HUMAN_REQUIRED")
+        self.assertIn("architecture", backend_evidence()["host"])
 
 
 if __name__ == "__main__": unittest.main()
