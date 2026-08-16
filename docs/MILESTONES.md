@@ -152,6 +152,13 @@ privacy-safe recipient routing, generic BBS mail adapter modes, and deterministi
 configuration diagnostics are implemented. Real Internet qualification remains
 operator `HUMAN_REQUIRED` work.
 
+### M6.5 — IRC infrastructure
+
+InspIRCd-oriented private/public mode intent, TLS listeners, channel policy,
+generic BBS bridge mappings, external secret references, and privacy-safe
+diagnostics are implemented. Public IRC and Tier-1 bridge qualification remain
+`HUMAN_REQUIRED`.
+
 ### M6.4 — NNTP / Usenet-style news
 
 INN-oriented private/public mode intent, bounded groups and retention, generic

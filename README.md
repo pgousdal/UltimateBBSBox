@@ -216,3 +216,7 @@ third-party payloads remain subject to the M1 preservation-first policy. See
 M6.4 adds a conservative private-first NNTP/news model with bounded retention,
 generic BBS mappings, and optional explicit public modes. See
 [`docs/NEWS.md`](docs/NEWS.md); no public Usenet peering occurs in tests.
+
+M6.5 adds private-first IRC infrastructure with explicit TLS/public opt-in and
+generic BBS bridge intent. See [docs/IRC.md](docs/IRC.md); tests do not expose
+public IRC.

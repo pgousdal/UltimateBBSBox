@@ -1,0 +1,15 @@
+kind: service
+schema_version: 1
+id: irc-core
+service:
+  type: irc
+  title: UBB IRC Core
+  family: inspircd
+exposure:
+  main_menu: false
+  admin_only: true
+endpoint: irc-core
+lifecycle:
+  mode: always_on
+  sharing: multiuser
+  restart: on_failure

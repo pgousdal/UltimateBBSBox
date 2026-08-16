@@ -1,0 +1,7 @@
+kind: endpoint
+schema_version: 1
+id: irc-core
+type: tcp
+host: 127.0.0.1
+port: 6697
+protocol: raw_tcp
