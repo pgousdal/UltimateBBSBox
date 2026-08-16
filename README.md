@@ -16,6 +16,13 @@ Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and on
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/MILESTONES.md](docs/MILESTONES.md).
 
+The admin plane's generic backup API preserves integration living state (users,
+messages, configuration and declared file data) separately from immutable M1
+software. Backups are staged, verified and exposed through the authenticated
+admin action service; see [docs/BACKUP.md](docs/BACKUP.md). The dashboard/systemd
+deployment uses an unprivileged service account and keeps the preservation
+archive read-only.
+
 ## Preservation archive
 
 The dependency-light archive CLI stores immutable, content-addressed objects, records provenance and conservative rights decisions, verifies objects, records derived lineage, and creates museum or rights-gated publication exports. The default production root is `/srv/ultimate-bbs-box/archive`; always select a development root explicitly when working without root privileges.

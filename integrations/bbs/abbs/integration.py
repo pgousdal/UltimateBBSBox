@@ -31,6 +31,7 @@ class ABBSRelease:
 
 
 class ABBSAmigaIntegration:
+    backup_components = {"include": ("config", "users", "messages", "files_metadata", "uploads", "doors"), "exclude": ("software", "cache", "logs", "tmp"), "consistency": "stopped"}
     id = "abbs-amiga"
     service_id = "abbs-main"
     runtime = "fs_uae"

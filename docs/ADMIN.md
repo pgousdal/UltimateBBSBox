@@ -54,3 +54,6 @@ presentation layer over this exact model, not a replacement for the CLI.
 
 M8.3 authentication, roles, CSRF, action delegation, and audit boundaries are
 described in [ADMIN-SECURITY.md](ADMIN-SECURITY.md).
+
+Backup semantics and least-privilege ownership are described in
+[BACKUP.md](BACKUP.md).

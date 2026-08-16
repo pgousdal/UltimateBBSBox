@@ -1,0 +1,19 @@
+[Unit]
+Description=Ultimate BBS Box authenticated admin dashboard
+After=local-fs.target ubb-supervisor.service
+
+[Service]
+Type=simple
+User=ubb-dashboard
+Group=ubb-dashboard
+WorkingDirectory=/opt/ultimate-bbs-box
+ExecStart=/usr/bin/python3 /opt/ultimate-bbs-box/scripts/ubb-dashboard.py --bind 127.0.0.1 --port 8088 --supervisor-state /var/lib/ultimate-bbs-box/supervisor --auth-users /etc/ultimate-bbs-box/admin-users.json --audit-path /var/log/ultimate-bbs-box/admin-audit.jsonl
+Restart=on-failure
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/srv/ultimate-bbs-box/archive
+ReadWritePaths=/var/lib/ultimate-bbs-box /var/log/ultimate-bbs-box
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

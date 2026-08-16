@@ -42,6 +42,7 @@ class AmiExpressRelease:
 
 
 class AmiExpressAmigaIntegration:
+    backup_components = {"include": ("config", "users", "messages", "files_metadata", "uploads", "doors"), "exclude": ("software", "cache", "logs", "tmp"), "consistency": "stopped"}
     id = "amiexpress-amiga"
     service_id = "amiexpress-main"
     runtime = "fs_uae"

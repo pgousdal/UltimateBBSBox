@@ -9,11 +9,12 @@ def _read_json(path):
     except (FileNotFoundError, json.JSONDecodeError, OSError): return None
 
 class Observatory:
-    def __init__(self, registry, *, archive_root=None, supervisor_state=None, router_state=None,
+    def __init__(self, registry, *, archive_root=None, supervisor_state=None, router_state=None, backup_root=None,
                  install_roots=None, now=None):
         self.registry=registry; self.archive_root=pathlib.Path(archive_root).resolve() if archive_root else None
         self.supervisor_state=pathlib.Path(supervisor_state).resolve() if supervisor_state else None
         self.router_state=pathlib.Path(router_state).resolve() if router_state else None
+        self.backup_root=pathlib.Path(backup_root).resolve() if backup_root else None
         self.install_roots={k:pathlib.Path(v).resolve() for k,v in (install_roots or {}).items()}
         self.now=now or (lambda: datetime.now(timezone.utc))
         self.degraded=[]
@@ -49,7 +50,7 @@ class Observatory:
         return None
 
     def _backup(self, integration_id):
-        root=self.install_roots.get(integration_id)
+        root=self.backup_root or self.install_roots.get(integration_id)
         if not root: return None
         paths=list(root.glob("backup*/backup-manifest.json"))+list(root.glob("backups/*/backup-manifest.json"))
         paths=sorted(paths,key=lambda p:p.stat().st_mtime if p.exists() else 0,reverse=True)

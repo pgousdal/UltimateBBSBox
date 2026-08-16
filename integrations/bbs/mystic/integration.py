@@ -18,6 +18,7 @@ from ubb_integrations.models import InstallResult, QualificationResult, Qualific
 
 
 class MysticLinuxIntegration:
+    backup_components = {"include": ("config", "users", "messages", "files_metadata", "uploads", "doors"), "exclude": ("software", "cache", "logs", "tmp"), "consistency": "stopped"}
     id = "mystic-linux"
     service_id = "mystic-main"
     runtime = "native"

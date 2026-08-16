@@ -98,11 +98,17 @@ overview/detail pages and versioned GET-only JSON endpoints. It binds to
 loopback by default and introduces no database, write actions, authentication,
 or frontend build stack.
 
-### M8.3 — Authenticated admin actions + audit — COMPLETE
+### M8.3 — Authenticated admin actions + audit — INCOMPLETE
 
 Authenticated operator sessions, role/CSRF checks, delegated operational action
-endpoints, and append-only audit records are implemented. Privilege-separated
-deployment and broader remote monitoring remain M8.4 hardening work.
+endpoints, and append-only audit records are implemented. The remaining
+end-to-end action verification is tracked as M8.3d.
+
+### M8.3c — Generic Backup API + privilege boundary
+
+The product-neutral staged backup manager, manifest verification, restore-plan
+hooks, Tier-1 living-state declarations, and trusted dashboard delegation are
+implemented. Full end-to-end admin action verification remains M8.3d.
 
 ### M8.4 — Alerts/remote hosts/monitoring hardening
 

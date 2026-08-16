@@ -26,9 +26,11 @@ the UI. Rotation and cryptographic tamper evidence are operational follow-up,
 not claimed here.
 
 The dashboard remains loopback-bound by default and has no custom TLS, public
-admin listener, caller identity, or unrestricted-root requirement. Use a VPN,
-SSH tunnel, or authenticated reverse proxy for remote access. M8.4 covers
-further privilege separation and monitoring hardening.
+admin listener, caller identity, or unrestricted-root requirement. The
+production unit runs as the dedicated unprivileged `ubb-dashboard` account,
+with read-only archive access and narrowly scoped writable state for sessions,
+audit, and backup/control data. Use a VPN, SSH tunnel, or authenticated reverse
+proxy for remote access. Further monitoring hardening remains M8.4 work.
 
 M8.3b completes registered maintenance, backup, qualification, and AmiExpress
 promotion/rollback routes. Operators use the same delegated action service as
