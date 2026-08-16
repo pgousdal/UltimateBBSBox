@@ -219,6 +219,12 @@ Incomplete on the current host: DOSEMU2 and an approved M1-preserved FreeDOS
 artifact are unavailable, so no real boot or COM qualification is claimed. See
 `docs/M9.1a-QUALIFICATION.md`.
 
+### M9.1b — Debian DOSEMU2 + FreeDOS 1.4 Provisioning
+
+Incomplete: Debian-first provisioning and observed FreeDOS artifact metadata are
+modeled, but this host has no DOSEMU2 or M1-preserved FreeDOS 1.4 media. No real
+runtime qualification is claimed; see `docs/M9.1b-QUALIFICATION.md`.
+
 ### M6.4 — NNTP / Usenet-style news
 
 INN-oriented private/public mode intent, bounded groups and retention, generic

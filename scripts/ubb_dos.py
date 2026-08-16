@@ -21,6 +21,7 @@ class DOSConfigError(ValueError):
 
 
 BACKENDS = ("dosemu2", "dosbox_x", "dosbox_staging", "qemu")
+PRODUCTION_OS = "debian"
 GUEST_FAMILIES = ("freedos", "msdos", "drdos", "other_dos")
 ENCODINGS = ("CP437", "CP850", "ISO-8859-1", "UTF-8", "adapter_defined")
 NEWLINES = ("CR", "LF", "CRLF")
@@ -228,6 +229,28 @@ def backend_evidence(backend: str = "dosemu2") -> dict:
     return {"backend": backend, "executable": executable, "available": bool(executable),
             "version": None, "source": "PATH" if executable else None,
             "host": {"os": platform.platform(), "architecture": platform.machine()}}
+
+
+def debian_provisioning_plan(*, target_os: str = PRODUCTION_OS, release: str | None = None,
+                             package_available: bool = False, package_version: str | None = None) -> dict:
+    """Return a Debian-first plan; never selects an Ubuntu PPA implicitly."""
+    if target_os.lower() != PRODUCTION_OS:
+        raise DOSConfigError("DOS runtime production provisioning requires Debian")
+    if package_available and not package_version:
+        raise DOSConfigError("a Debian package plan requires an exact package version")
+    return {"production_os": PRODUCTION_OS, "release": release, "method": "apt" if package_available else "blocked",
+            "package": "dosemu2" if package_available else None, "version": package_version,
+            "ubuntu_ppa": False, "reason": "Debian package availability requires target-host verification"}
+
+
+def freedos_release_metadata(*, version: str = "1.4", artifact: str | None = None,
+                             sha256: str | None = None, source_url: str | None = None) -> dict:
+    """Require observed artifact identity; never invent a filename or checksum."""
+    if version != "1.4":
+        raise DOSConfigError("M9.1b reference guest is FreeDOS 1.4")
+    state = "VERIFIED" if artifact and sha256 and source_url else "HUMAN_REQUIRED"
+    return {"version": version, "artifact": artifact, "sha256": sha256, "source_url": source_url,
+            "state": state, "preservation": "M1_REQUIRED"}
 
 
 def boot_marker_ready(output: bytes | str, marker: str = "UBB_DOS_READY") -> bool:

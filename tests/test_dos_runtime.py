@@ -6,7 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from ubb_dos import (COMPort, DOSConfigError, DOSDeployment, DOSProfile,
                      DriveMapping, MachineProfile, NodeAllocator, TerminalProfile,
-                     backend_evidence, boot_marker_ready, default_profiles, qualification,
+                     backend_evidence, boot_marker_ready, debian_provisioning_plan,
+                     default_profiles, freedos_release_metadata, qualification,
                      qualification_evidence, validate_dos_filename)
 from ubb_runtime import DOSAdapter, RuntimeAdapterRegistry, UnsupportedAdapter
 
@@ -60,6 +61,14 @@ class DOSRuntimeTests(unittest.TestCase):
         item = qualification_evidence("boot", "HUMAN_REQUIRED", reason="runtime unavailable")
         self.assertEqual(item["state"], "HUMAN_REQUIRED")
         self.assertIn("architecture", backend_evidence()["host"])
+
+    def test_debian_first_provisioning_and_observed_freedos_identity(self):
+        plan = debian_provisioning_plan(release="debian-13")
+        self.assertEqual(plan["production_os"], "debian")
+        self.assertFalse(plan["ubuntu_ppa"])
+        with self.assertRaises(DOSConfigError): debian_provisioning_plan(target_os="ubuntu")
+        self.assertEqual(freedos_release_metadata()["state"], "HUMAN_REQUIRED")
+        with self.assertRaises(DOSConfigError): freedos_release_metadata(version="1.3")
 
 
 if __name__ == "__main__": unittest.main()
