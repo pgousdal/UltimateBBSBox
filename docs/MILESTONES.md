@@ -98,11 +98,11 @@ overview/detail pages and versioned GET-only JSON endpoints. It binds to
 loopback by default and introduces no database, write actions, authentication,
 or frontend build stack.
 
-### M8.3 — Authenticated admin actions + audit — INCOMPLETE
+### M8.3 — Authenticated admin actions + audit — COMPLETE
 
 Authenticated operator sessions, role/CSRF checks, delegated operational action
-endpoints, and append-only audit records are implemented. The remaining
-end-to-end action verification is tracked as M8.3d.
+endpoints, append-only audit records, and granular HTTP verification are
+implemented. See [M8.3-ACCEPTANCE.md](M8.3-ACCEPTANCE.md).
 
 ### M8.3c — Generic Backup API + privilege boundary
 
@@ -110,12 +110,11 @@ The product-neutral staged backup manager, manifest verification, restore-plan
 hooks, Tier-1 living-state declarations, and trusted dashboard delegation are
 implemented. Full end-to-end admin action verification remains M8.3d.
 
-### M8.3d — End-to-end admin action verification — INCOMPLETE
+### M8.3d — End-to-end admin action verification — COMPLETE
 
-A loopback HTTP fixture verifies login, role-specific controls, CSRF rejection,
-delegated operational actions, and audit privacy. The complete action matrix,
-promotion/rollback, and production deployment smoke checks remain to be
-expanded before M8.3 can be marked complete.
+A granular loopback HTTP fixture verifies role matrices, CSRF, delegated
+actions, backup/qualification/release paths, concurrency, audit privacy, and
+the unprivileged systemd boundary.
 
 ### M8.4 — Alerts/remote hosts/monitoring hardening
 

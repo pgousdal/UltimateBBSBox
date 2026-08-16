@@ -59,5 +59,5 @@ Backup semantics and least-privilege ownership are described in
 [BACKUP.md](BACKUP.md).
 
 The M8.3d HTTP fixture verifies login, role-specific controls, CSRF rejection,
-delegated actions, and audit privacy. The full original M8.3 acceptance matrix
-remains incomplete pending broader promotion/rollback and deployment checks.
+delegated actions, backup/qualification/release paths, concurrency, and audit
+privacy. The complete criterion mapping is in [M8.3-ACCEPTANCE.md](M8.3-ACCEPTANCE.md).

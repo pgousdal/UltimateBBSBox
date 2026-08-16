@@ -113,10 +113,10 @@ class Handler(BaseHTTPRequestHandler):
                 value=self.app.api(path)
                 if value is None:self.send_error(404); return
                 payload=json.dumps(_jsonable(value),sort_keys=True).encode()
-                self.send_response(200); self.send_header("Content-Type","application/json; charset=utf-8"); self.send_header("Content-Length",str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+                self._send(200,payload,'application/json; charset=utf-8'); return
             page=self.app.page(path,self.app.authenticate(token) if self.app.require_auth else None)
             if page is None:self.send_error(404); return
-            payload=page.encode(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8"); self.send_header("Content-Security-Policy","default-src 'self'; style-src 'unsafe-inline'"); self.send_header("X-Content-Type-Options","nosniff"); self.send_header("Content-Length",str(len(payload))); self.end_headers(); self.wfile.write(payload)
+            payload=page.encode(); self._send(200,payload,'text/html; charset=utf-8'); return
         except Exception: self.send_error(503,"observatory temporarily unavailable")
     def do_POST(self):
         path=urlparse(self.path).path
@@ -128,7 +128,8 @@ class Handler(BaseHTTPRequestHandler):
                 if self.app.audit:self.app.audit.append(user,'unknown','login','admin','denied',remote=self.client_address[0],message='invalid credentials')
                 self._send(401,'<h1>Login failed</h1>'); return
             if self.app.audit:self.app.audit.append(user,'unknown','login','admin','success',remote=self.client_address[0])
-            self._send(303,'',headers={'Location':'/','Set-Cookie':f'ubb_admin={token}; HttpOnly; SameSite=Strict; Path=/' }); return
+            secure='; Secure' if getattr(self.app,'secure_cookies',False) else ''
+            self._send(303,'',headers={'Location':'/','Set-Cookie':f'ubb_admin={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800{secure}' }); return
         token=self._cookie('ubb_admin'); session=self.app.authenticate(token)
         if not session:self._unauthorized(); return
         if path.startswith('/api/v1/admin/'):
@@ -148,7 +149,7 @@ class Handler(BaseHTTPRequestHandler):
             if bit.strip().startswith(name+'='): return bit.strip().split('=',1)[1]
         return None
     def _send(self,code,body,ctype='text/html; charset=utf-8',headers=None):
-        data=body.encode() if isinstance(body,str) else body; self.send_response(code); self.send_header('Content-Type',ctype); self.send_header('Cache-Control','no-store');
+        data=body.encode() if isinstance(body,str) else body; self.send_response(code); self.send_header('Content-Type',ctype); self.send_header('Cache-Control','no-store'); self.send_header('Referrer-Policy','no-referrer'); self.send_header('X-Content-Type-Options','nosniff'); self.send_header('Content-Security-Policy',"default-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'");
         for k,v in (headers or {}).items(): self.send_header(k,v)
         self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)
     def _unauthorized(self): self._send(401,'<h1>Authentication required</h1>')
