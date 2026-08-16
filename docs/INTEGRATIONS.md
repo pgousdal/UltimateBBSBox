@@ -54,6 +54,8 @@ M7.2 selects authentic ABBS for All 3.2 (`ABBS320_999.lha`) as the first family 
 
 M7.3 selects AmiExpress 5.6.1 (`Amix561.lha`) from Aminet. Its rewrite is described as MIT in the package readme, but bundled historical Installer/documentation components have separate rights, so the mixed original is preservation-only. It declares the A1200/OS3.1 profile and reuses the same generic Amiga mechanics. See [AMIGA-PROFILES.md](AMIGA-PROFILES.md) and the product README.
 
+M7.3a adds a second AmiExpress channel: a pinned GitHub development artifact identified by source commit `0f344713f30da7b6a4629643e32b50094cb2bd0b`, exact filename, and SHA-256. GitHub `dev-build` is queried only for discovery. M1 acquisition, candidate qualification, explicit promotion, and bounded rollback maintain immutable software and mutable BBS state separately. `always_on` is recommended for current deployment, but `on_demand` remains a service policy choice. Update checks never boot the Amiga or mutate installation state.
+
 The contract deliberately does not prescribe a container format, host-side executable installer, native runtime, self-hosted TCP listener, or unattended configuration. AmiExpress can reuse prerequisite resolution, FS-UAE profile handling, golden/working images, serial bridging, and qualification helpers without product branching in M1–M5.
 
 M7.2 does not implement AmiExpress, M6 network/core services, BBS publication, a final menu UI, central identity, or mass ingestion.

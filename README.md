@@ -63,6 +63,8 @@ M7.2 applies that contract to ABBS for All 3.2. It preserves the authentic LHA b
 
 M7.3 adds AmiExpress 5.6.1 from Aminet and canonical `amiga-a500-k13`/`amiga-a1200-os31` profiles. AmiExpress uses only the evidence-supported A1200/OS3.1 profile and the same generic Amiga helpers as ABBS. See [integrations/bbs/amiexpress/README.md](integrations/bbs/amiexpress/README.md) and [docs/AMIGA-PROFILES.md](docs/AMIGA-PROFILES.md).
 
+M7.3a adds the pinned AmiExpress GitHub current track. The rolling `dev-build` release is discovery metadata only; exact commit, filename, digest, and preserved M1 artifact identity are required. Updates are checked explicitly, promoted only after qualification and operator approval, and rolled back through software pointers without reverting living BBS data.
+
 ```bash
 python3 scripts/ubb-integration.py list
 python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive acquire mystic-linux

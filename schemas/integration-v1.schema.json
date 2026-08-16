@@ -13,6 +13,23 @@
     "integration_revision": {"type": "integer", "minimum": 1, "default": 1},
     "automation_level": {"enum": ["fully_automated", "assisted", "manual_install", "preservation_only"]},
     "runtime": {"enum": ["native", "fs_uae", "vice", "dos", "mame", "hatari", "qemu", "simh", "remote"]},
+    "recommended_lifecycle": {"enum": ["on_demand", "always_on"]},
+    "release_channels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["release", "artifact_id", "purpose"],
+        "properties": {
+          "release": {"type": "string"},
+          "artifact_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+          "source_tag": {"type": "string"},
+          "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "purpose": {"enum": ["museum_reference", "current_operational"]}
+        }
+      }
+    },
     "artifacts": {
       "type": "array",
       "items": {

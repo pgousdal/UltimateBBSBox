@@ -1,0 +1,43 @@
+{
+  "channel": "development",
+  "purpose": "current_operational",
+  "stability": "prerelease",
+  "source_repository": "https://github.com/dmcoles/AmiExpress",
+  "source_tag": "dev-build",
+  "source_commit": "0f344713f30da7b6a4629643e32b50094cb2bd0b",
+  "release_url": "https://github.com/dmcoles/AmiExpress/releases/tag/dev-build",
+  "release_id": 120771713,
+  "asset": {
+    "filename": "amiExpress-nightly0f344713f30da7b6a4629643e32b50094cb2bd0b.lha",
+    "size": 456145,
+    "github_digest": "sha256:23459a56b086a28f9cad1da59691f0867c2e15f16bc37417723fd10207e42533",
+    "sha256": "23459a56b086a28f9cad1da59691f0867c2e15f16bc37417723fd10207e42533",
+    "sha1": "4fd3b80725196b926ad8f02511d71925c616ed6e",
+    "md5": "c7e39c17caf4356715eaff8f33640ed4"
+  },
+  "upstream": {
+    "published_at": "2023-09-12T10:33:45Z",
+    "updated_at": "2026-08-10T15:34:27Z",
+    "prerelease": true,
+    "release_name": "automated dev build {2026-08-10}"
+  },
+  "reference_acquisition": {
+    "acquired_at": "2026-08-16T11:18:50.225758Z",
+    "through_m1": true,
+    "temporary_archive": true,
+    "binary_committed": false
+  },
+  "rights": {
+    "status": "preservation_only",
+    "preserve_locally": true,
+    "install_locally": true,
+    "redistribute_original": false,
+    "publish_to_bbs_filebase": false,
+    "export_from_archive": true,
+    "evidence": "The rewrite identifies MIT terms, but packaged historical Installer/documentation components have separate notices. The mixed artifact is conservatively preservation-only."
+  },
+  "source_snapshot": {
+    "status": "deferred",
+    "reason": "The exact binary and commit identity are preserved; rebuilding/reproducibility is not claimed and a source archive is not duplicated in this delivery."
+  }
+}

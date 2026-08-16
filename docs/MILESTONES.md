@@ -63,6 +63,10 @@ The same contract now supports the ABBS family with authentic ABBS for All 3.2 p
 
 The AmiExpress family integration selects the authentic Aminet `Amix561.lha` 5.6.1 maintained rewrite, preserves it through M1, records mixed-component rights conservatively, derives installation media with lineage, uses the canonical A1200/OS3.1 profile, and reuses generic golden/working HDF, FS-UAE and serial-bridge mechanics. Real boot/login evidence remains `HUMAN_REQUIRED` pending licensed platform assets; no synthetic result is presented as a real AmiExpress qualification.
 
+### M7.3a — AmiExpress current GitHub track
+
+The AmiExpress family now has an immutable, pinned GitHub development channel alongside the unchanged 5.6.1 museum reference. Current-build discovery validates release metadata, commit identity, asset selection, and GitHub digest; M1 preserves exact bytes; candidate qualification precedes explicit promotion; `current`/`previous` pointers support software rollback without reverting living BBS state. No automatic production update occurs. Real emulator qualification remains `HUMAN_REQUIRED` where licensed assets are unavailable.
+
 ### M7.4 — Tier-1 cross-integration hardening
 
 Harden shared behavior only after all three equal-priority Tier-1 integrations provide real evidence.

@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.request
 
 import ubb_archive
 from ubb_integrations.amiga import copy_working_image, resolve_assets, runtime_profile, write_fs_uae_config
@@ -30,6 +31,14 @@ class AmiExpressRelease:
     sha1: str | None = None
     md5: str | None = None
     size: int | None = None
+    channel: str = "stable"
+    stability: str = "reference"
+    purpose: str = "museum_reference"
+    source_tag: str | None = None
+    source_commit: str | None = None
+    github_digest: str | None = None
+    published_at: str | None = None
+    upstream_updated_at: str | None = None
 
 
 class AmiExpressAmigaIntegration:
@@ -39,9 +48,18 @@ class AmiExpressAmigaIntegration:
     automation_level = "assisted"
     releases = {
         "5.6.1": AmiExpressRelease("5.6.1", "5.6.1", "amiexpress-amiga-5.6.1-original", "Amix561.lha",
-            "https://aminet.net/comm/amiex/Amix561.lha")
+            "https://aminet.net/comm/amiex/Amix561.lha", "f49d051222a4a951597d241469dab24adb198c6849cdb111734fdd8c03571f4d", "ee7986a0d89e15e63c066263fb49884af3f0791d", "f4a8d5794bfebaeb359d85d78fca3ae6", 1161960),
+        "development-0f344713f30d": AmiExpressRelease(
+            "development-0f344713f30d", "dev-build", "amiexpress-dev-0f344713f30d",
+            "amiExpress-nightly0f344713f30da7b6a4629643e32b50094cb2bd0b.lha",
+            "https://github.com/dmcoles/AmiExpress/releases/download/dev-build/amiExpress-nightly0f344713f30da7b6a4629643e32b50094cb2bd0b.lha",
+            "23459a56b086a28f9cad1da59691f0867c2e15f16bc37417723fd10207e42533", None, None, 456145,
+            "development", "prerelease", "current_operational", "dev-build",
+            "0f344713f30da7b6a4629643e32b50094cb2bd0b", "sha256:23459a56b086a28f9cad1da59691f0867c2e15f16bc37417723fd10207e42533",
+            "2023-09-12T10:33:45Z", "2026-08-10T15:34:27Z")
     }
     default_release = "5.6.1"
+    current_release_key = "development-0f344713f30d"
     supported_profiles = ("amiga-a1200-os31",)
     default_profile = "amiga-a1200-os31"
     manual_evidence = ("amiexpress_installed", "base_configuration_completed", "golden_image_qualified")
@@ -65,6 +83,83 @@ class AmiExpressAmigaIntegration:
         except KeyError as exc:
             raise ArtifactRequiredError(f"unknown AmiExpress release: {key}") from exc
 
+    def releases_by_channel(self, channel=None):
+        return [item for item in self.releases.values() if channel is None or item.channel == channel]
+
+    @staticmethod
+    def parse_github_release(document):
+        """Parse one GitHub release and reject floating/ambiguous metadata."""
+        if document.get("tag_name") != "dev-build" or document.get("draft") or not document.get("prerelease"):
+            raise ArtifactRequiredError("GitHub metadata is not the expected published dev-build prerelease")
+        assets = [item for item in document.get("assets", []) if str(item.get("name", "")).lower().endswith(".lha")]
+        if len(assets) != 1:
+            raise ArtifactRequiredError("GitHub dev-build must contain exactly one LHA asset")
+        asset = assets[0]; digest = asset.get("digest", "")
+        if not isinstance(digest, str) or not digest.startswith("sha256:") or len(digest) != 71:
+            raise ArtifactRequiredError("GitHub dev-build asset lacks a valid SHA-256 digest")
+        name = asset["name"]; commit = name.removeprefix("amiExpress-nightly").removesuffix(".lha")
+        if len(commit) != 40 or any(char not in "0123456789abcdef" for char in commit.lower()):
+            raise ArtifactRequiredError("dev-build asset does not carry a verifiable 40-character commit identity")
+        return {"tag": "dev-build", "source_commit": commit, "filename": name, "source_url": asset.get("browser_download_url"),
+                "github_digest": digest, "size": asset.get("size"), "published_at": document.get("published_at"),
+                "upstream_updated_at": document.get("updated_at"), "release_url": document.get("html_url"),
+                "prerelease": True, "release_id": document.get("id")}
+
+    def check_updates(self, document=None):
+        try:
+            if document is None:
+                request = urllib.request.Request("https://api.github.com/repos/dmcoles/AmiExpress/releases/tags/dev-build",
+                    headers={"Accept": "application/vnd.github+json", "User-Agent": "UltimateBBSBox-M7.3a"})
+                with urllib.request.urlopen(request, timeout=20) as response:
+                    document = json.load(response)
+            discovered = self.parse_github_release(document)
+            current = self.select_release(self.current_release_key)
+            if discovered["source_commit"] == current.source_commit and discovered["github_digest"] != current.github_digest:
+                return {"status": "DIGEST_MISMATCH", "release": discovered}
+            if discovered["source_commit"] == current.source_commit and discovered["github_digest"] == current.github_digest:
+                return {"status": "NO_CHANGE", "release": discovered}
+            return {"status": "NEW_BUILD_AVAILABLE", "release": discovered}
+        except ArtifactRequiredError:
+            return {"status": "INVALID_UPSTREAM_METADATA"}
+        except (OSError, ValueError, json.JSONDecodeError):
+            return {"status": "INVALID_UPSTREAM_METADATA"}
+
+    def _deployment_path(self, install_root):
+        return pathlib.Path(install_root).resolve() / "deployment" / "amiexpress-current.json"
+
+    def deployment_status(self, install_root):
+        path = self._deployment_path(install_root)
+        if not path.is_file():
+            return {"current": None, "previous": None, "candidates": []}
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def promote(self, install_root, artifact_id, *, approve_human=False):
+        release = self._release_for_artifact(artifact_id)
+        if release.channel != "development":
+            raise ArtifactRequiredError("only development-channel releases can be promoted as current")
+        root = pathlib.Path(install_root).resolve(); qualification = root / "qualification" / f"{artifact_id}.json"
+        if not qualification.is_file():
+            raise ArtifactRequiredError("release has no qualification record")
+        results = json.loads(qualification.read_text(encoding="utf-8")).get("results", [])
+        if any(item.get("status") == "FAIL" for item in results):
+            raise ArtifactRequiredError("failed release cannot be promoted")
+        if not approve_human and any(item.get("status") == "HUMAN_REQUIRED" for item in results):
+            raise ArtifactRequiredError("operator approval is required for HUMAN_REQUIRED checks")
+        state = self.deployment_status(root); old = state.get("current")
+        state["previous"] = old; state["current"] = artifact_id; state.setdefault("candidates", [])
+        state["candidates"] = [item for item in state["candidates"] if item != artifact_id]
+        path = self._deployment_path(root); path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
+        temporary = path.with_name(".amiexpress-current.json.tmp"); temporary.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n"); os.replace(temporary, path)
+        return state
+
+    def rollback(self, install_root):
+        root = pathlib.Path(install_root).resolve(); state = self.deployment_status(root)
+        if not state.get("previous"):
+            raise ArtifactRequiredError("no previous qualified AmiExpress release is available for rollback")
+        state["current"], state["previous"] = state["previous"], state.get("current")
+        path = self._deployment_path(root); temporary = path.with_name(".amiexpress-current.json.tmp"); temporary.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n"); os.replace(temporary, path)
+        return state
+
     def _release_for_artifact(self, artifact_id):
         for release in self.releases.values():
             if release.artifact_id == artifact_id:
@@ -72,9 +167,10 @@ class AmiExpressAmigaIntegration:
         raise ArtifactRequiredError(f"artifact is not a known AmiExpress release: {artifact_id}")
 
     def _args(self, root, release, local_file=None, source_url=None, private=False):
+        development = release.channel == "development"
         return argparse.Namespace(root=str(root), artifact_id=release.artifact_id,
             file=str(local_file) if local_file else None, source_url=source_url or release.source_url,
-            source_name="Aminet comm/amiex", original_filename=release.filename,
+            source_name="GitHub dmcoles/AmiExpress dev-build" if development else "Aminet comm/amiex", original_filename=release.filename,
             expected_sha256=None if private else release.sha256, expected_sha1=None if private else release.sha1,
             expected_md5=None if private else release.md5, max_bytes=64 * 1024 * 1024, timeout=60,
             rights_status="licensed_private" if private else "preservation_only",
@@ -82,7 +178,11 @@ class AmiExpressAmigaIntegration:
             no_owner_export=False, rights_evidence=[
                 "The bundled read_me grants MIT terms for Darren Coles's rewrite, but the same archive includes Escom AG's licensed Installer and historical LightSpeed documentation. The mixed archive is therefore preservation-only until components are independently reviewed; local installation is allowed, redistribution and publication remain denied."],
             software_family="amiexpress", version=release.version, platform="m68k-amigaos",
-            notes="AmiExpress BBS system redeveloped in E; Aminet comm/amiex release 5.6.1.")
+            notes=("Pinned GitHub dev-build release; tag=dev-build, source_commit=" + str(release.source_commit) + "." if development else "AmiExpress BBS system redeveloped in E; Aminet comm/amiex release 5.6.1."),
+            provenance=({"release_channel": release.channel, "stability": release.stability, "purpose": release.purpose,
+                         "source_tag": release.source_tag, "source_commit": release.source_commit,
+                         "github_digest": release.github_digest, "published_at": release.published_at,
+                         "upstream_updated_at": release.upstream_updated_at} if development else {"release_channel": release.channel, "purpose": release.purpose}))
 
     def acquire(self, archive_root, *, local_file=None, source_url=None, artifact_id=None, release=None, licensed_private=False):
         selected = self.select_release(release) if artifact_id is None else self._release_for_artifact(artifact_id)
@@ -187,5 +287,7 @@ class AmiExpressAmigaIntegration:
     @staticmethod
     def _record(install_root, artifact_id, results):
         target=pathlib.Path(install_root)/"qualification"; target.mkdir(parents=True, exist_ok=True, mode=0o750)
-        document={"integration_id":"amiexpress-amiga","release":"5.6.1","artifact_id":artifact_id,"recorded_at":ubb_archive.now(),"results":[item.to_dict() for item in results]}
-        temporary=target/".latest.json.tmp"; temporary.write_text(json.dumps(document,indent=2,sort_keys=True)+"\n"); os.replace(temporary,target/"latest.json")
+        document={"integration_id":"amiexpress-amiga","release":artifact_id,"artifact_id":artifact_id,"recorded_at":ubb_archive.now(),"results":[item.to_dict() for item in results]}
+        payload=json.dumps(document,indent=2,sort_keys=True)+"\n"
+        temporary=target/".latest.json.tmp"; temporary.write_text(payload); os.replace(temporary,target/"latest.json")
+        release_file=target / f"{artifact_id}.json"; release_tmp=target / f".{artifact_id}.json.tmp"; release_tmp.write_text(payload); os.replace(release_tmp, release_file)

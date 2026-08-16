@@ -312,7 +312,7 @@ def import_artifact(args: argparse.Namespace) -> dict:
     with open_local(path) as stream:
         return preserve_stream(root_path(args.root), args.artifact_id, args.original_filename or path.name, stream,
                                {"acquired_at": now(), "source": args.source_name, "source_url": clean_url,
-                                "retrieval_method": "local_file", **({"notes": args.notes} if args.notes else {})}, args)
+                                "retrieval_method": "local_file", **getattr(args, "provenance", {}), **({"notes": args.notes} if args.notes else {})}, args)
 
 
 def response_filename(response, url: str) -> str:
@@ -335,6 +335,7 @@ def acquire_http(args: argparse.Namespace) -> dict:
             return preserve_stream(root_path(args.root), args.artifact_id, filename, response,
                                    {"acquired_at": now(), "source": args.source_name, "source_url": clean_url,
                                     "retrieval_method": urllib.parse.urlsplit(clean_url).scheme,
+                                    **getattr(args, "provenance", {}),
                                     **({"notes": args.notes} if args.notes else {})}, args, expected_size=expected_size)
     except ArchiveError:
         raise

@@ -15,3 +15,18 @@ Acquire with M1, verify, and derive an immutable lineage-recorded installation t
 FS-UAE is selected through the M5 adapter using generated canonical profile metadata and a raw TCP serial listener on port 6403. M3 owns on-demand/always-on lifecycle, readiness and scheduled maintenance holds; M4 owns direct route authorization and raw terminal streams. AmiExpress owns destination login. Real Amiga boot, AmiExpress startup, readiness, login/menu, restart and living-state checks are `HUMAN_REQUIRED` without licensed assets; synthetic tests do not claim them.
 
 The profile resolver, prerequisite handling, golden/working image model, FS-UAE configuration writer and serial path are the same generic components used by ABBS and are suitable for future AmiExpress releases.
+
+## Stable and current tracks
+
+The stable museum release remains `5.6.1` / `Amix561.lha` and is never overwritten. The current operational track is pinned to the GitHub `dev-build` release published as `amiExpress-nightly0f344713f30da7b6a4629643e32b50094cb2bd0b.lha`, source commit `0f344713f30da7b6a4629643e32b50094cb2bd0b`, SHA-256 `23459a56b086a28f9cad1da59691f0867c2e15f16bc37417723fd10207e42533`. The floating `dev-build` URL is discovery-only; M1 acquisition stores the exact asset before any install.
+
+Use `python3 scripts/ubb-integration.py releases amiexpress-amiga` to inspect channels and `check-updates amiexpress-amiga` to query GitHub. Checks report `NO_CHANGE`, `NEW_BUILD_AVAILABLE`, `INVALID_UPSTREAM_METADATA`, or `DIGEST_MISMATCH`; they never install or promote. Promotion requires a per-artifact qualification record and explicit approval for `HUMAN_REQUIRED` checks:
+
+```text
+python3 scripts/ubb-integration.py --archive-root PATH acquire amiexpress-amiga --channel development
+python3 scripts/ubb-integration.py --install-root PATH promote amiexpress-amiga --release amiexpress-dev-0f344713f30d --approve-human
+python3 scripts/ubb-integration.py --install-root PATH deployment-status amiexpress-amiga
+python3 scripts/ubb-integration.py --install-root PATH rollback amiexpress-amiga
+```
+
+Promotion maintains `current` and `previous` deployment pointers; it never copies or mutates preserved objects and never rolls back living users, messages, queues, or door state. The development integration recommends `always_on`, while the service manifest remains selectable as `on_demand`. Source snapshot preservation is intentionally deferred: the exact binary, commit identity, release metadata, and digest are preserved, but UBB does not claim reproducible rebuilding.

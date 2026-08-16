@@ -5,6 +5,19 @@ target: amiexpress-main
 integration_revision: 1
 automation_level: assisted
 runtime: fs_uae
+release_channels:
+  stable:
+    release: 5.6.1
+    artifact_id: amiexpress-amiga-5.6.1-original
+    purpose: museum_reference
+  development:
+    release: development-0f344713f30d
+    artifact_id: amiexpress-dev-0f344713f30d
+    source_tag: dev-build
+    source_commit: 0f344713f30da7b6a4629643e32b50094cb2bd0b
+    sha256: 23459a56b086a28f9cad1da59691f0867c2e15f16bc37417723fd10207e42533
+    purpose: current_operational
+recommended_lifecycle: always_on
 artifacts:
   - artifact_id: amiexpress-amiga-5.6.1-original
     role: preservation_original
@@ -12,6 +25,9 @@ artifacts:
   - artifact_id: amiexpress-amiga-5.6.1-original-install-tree
     role: derived_install_media
     required: true
+  - artifact_id: amiexpress-dev-0f344713f30d
+    role: preservation_original
+    required: false
 runtime_config:
   executable: /usr/bin/fs-uae
   config_file: /srv/ultimate-bbs-box/integrations/bbs/amiexpress/runtime/amiexpress.fs-uae
