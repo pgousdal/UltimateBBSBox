@@ -1,0 +1,18 @@
+[Unit]
+Description=Ultimate BBS Box monitoring evaluation
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=ubb-dashboard
+Group=ubb-dashboard
+WorkingDirectory=/opt/ultimate-bbs-box
+ExecStart=/usr/bin/python3 /opt/ultimate-bbs-box/scripts/ubb-monitor.py evaluate --state-root /var/lib/ultimate-bbs-box
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/srv/ultimate-bbs-box/archive
+ReadWritePaths=/var/lib/ultimate-bbs-box/observatory
+RestrictAddressFamilies=AF_UNIX

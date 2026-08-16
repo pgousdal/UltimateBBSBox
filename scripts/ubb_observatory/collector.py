@@ -78,10 +78,16 @@ class Observatory:
                     releases.append({"key":rel.key,"version":rel.version,"artifact_id":rel.artifact_id,"sha256":rel.sha256})
             except Exception: pass
             jobs=tuple(j.get("name") for j in service.document.get("maintenance",{}).get("jobs",[]) if isinstance(j,dict) and j.get("name"))
+            remote=endpoint.get("location")=="remote"
+            if remote: health="UNKNOWN"
+            elif state=="failed" or (lifecycle.get("mode")=="always_on" and state not in ("running","ready","maintenance")): health="UNHEALTHY"
+            elif state in ("running","ready","maintenance") and readiness in ("NOT_READY","BLOCKED"): health="DEGRADED"
+            elif state=="unknown" or readiness=="UNKNOWN": health="UNKNOWN"
+            else: health="HEALTHY"
             result.append(ServiceSummary(service.id,service.title,service.type,integration_id,integ.get("runtime"),endpoint,
                 lifecycle.get("mode"),integ.get("recommended_lifecycle"),state,int(instance.get("active_session_count",0)),maintenance,
                 readiness,release,integ.get("profile") or integ.get("default_profile"),artifact,deployment,
-                tuple(releases), backup, "UNKNOWN" if endpoint.get("location")=="remote" else "LOCAL", False, jobs))
+                tuple(releases), backup, "UNKNOWN" if remote else "LOCAL", False, jobs, health))
         return tuple(sorted(result,key=lambda x:x.id))
 
     def sessions(self):
@@ -134,7 +140,11 @@ class Observatory:
         return tuple(sorted(result,key=lambda x:( {"critical":0,"warning":1,"info":2}.get(x.severity,3),x.id)))
 
     def hosts(self):
-        return ({"id":"local","location":"local","health":"LOCAL","services":[x.id for x in self.services() if x.host_health=="LOCAL"]},)
+        services=self.services(); local=[x.id for x in services if x.host_health=="LOCAL"]
+        hosts=[{"id":"local","display_name":"Local host","location":"local","health":"HEALTHY","services":local,"last_observation":self.now().isoformat()}]
+        remote={x.endpoint.get("host_id") or x.endpoint.get("host") or "remote" for x in services if x.host_health=="UNKNOWN"}
+        for host in sorted(remote): hosts.append({"id":host,"display_name":host,"location":"remote","health":"UNKNOWN","services":[x.id for x in services if x.host_health=="UNKNOWN"],"last_observation":None,"reason":"no telemetry"})
+        return tuple(hosts)
 
     def snapshot(self, activity_limit=100):
         services=self.services(); return ObservatorySnapshot(services,self.sessions(),self.activity(activity_limit),self.alerts(services),self.hosts(),tuple(sorted(set(self.degraded))))

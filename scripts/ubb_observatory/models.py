@@ -26,6 +26,7 @@ class ServiceSummary:
     host_health: str = "UNKNOWN"
     attention: bool = False
     maintenance_jobs: tuple[str, ...] = ()
+    health: str = "UNKNOWN"
     def to_dict(self): return asdict(self)
 
 @dataclass(frozen=True)
@@ -46,6 +47,11 @@ class Alert:
     service_id: str | None
     message: str
     details: dict[str, Any] = field(default_factory=dict)
+    state: str = "ACTIVE"
+    first_seen: str | None = None
+    last_seen: str | None = None
+    occurrence_count: int = 1
+    cleared_at: str | None = None
     def to_dict(self): return asdict(self)
 
 @dataclass(frozen=True)

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Ultimate BBS Box monitoring evaluation
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=ubb-monitor.service
+
+[Install]
+WantedBy=timers.target

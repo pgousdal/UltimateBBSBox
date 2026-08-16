@@ -11,6 +11,7 @@ from ubb_admin import AuthStore, SessionStore, AuditLog, AdminActionService
 from ubb_integrations.registry import IntegrationRegistry
 from ubb_supervisor import Supervisor
 from ubb_backup import BackupManager, BackupError
+from ubb_monitoring import MonitoringEngine, health_summary
 
 CSS="""body{font:15px system-ui,sans-serif;background:#10141b;color:#e9edf2;margin:0}main{max-width:1200px;margin:auto;padding:1.5rem}nav a{color:#9bd1ff;margin-right:1rem}.cards{display:flex;gap:1rem;flex-wrap:wrap}.card,table{background:#19212c;border:1px solid #334255;border-radius:6px;padding:1rem}.card{min-width:8rem}table{width:100%;border-collapse:collapse;padding:0}th,td{text-align:left;padding:.55rem;border-bottom:1px solid #334255}th{color:#b9c7d8}.badge{padding:.15rem .4rem;border-radius:3px;border:1px solid #718096}.critical{color:#ff9c9c}.warning{color:#ffd27d}.info{color:#9bd1ff}.muted{color:#a8b3c2}a{color:#9bd1ff}a:focus,button:focus{outline:2px solid #fff}code{font-family:monospace}h1,h2{margin-top:1.2rem}ul{padding-left:1.2rem}"""
 
@@ -22,8 +23,8 @@ def _jsonable(value):
     return value
 
 class DashboardApp:
-    def __init__(self, observatory, auth_store=None, sessions=None, audit=None, actions=None, require_auth=False):
-        self.observatory=observatory; self.auth=auth_store; self.sessions=sessions or SessionStore(); self.audit=audit; self.actions=actions; self.require_auth=require_auth; self.failed={}
+    def __init__(self, observatory, auth_store=None, sessions=None, audit=None, actions=None, require_auth=False, monitoring=None):
+        self.observatory=observatory; self.auth=auth_store; self.sessions=sessions or SessionStore(); self.audit=audit; self.actions=actions; self.require_auth=require_auth; self.monitoring=monitoring; self.failed={}
     def authenticate(self,token): return self.sessions.get(token) if token else None
     def snapshot(self): return self.observatory.snapshot()
     def login(self,user,password,remote=''):
@@ -37,11 +38,18 @@ class DashboardApp:
         snap=self.snapshot(); data=snap.to_dict(); parts=[x for x in path.split("/") if x]
         if parts==["api","v1","status"]:
             services=data["services"]; return {"services":len(services),"running":sum(x["state"] in ("running","ready","maintenance") for x in services),"active_callers":sum(x["active_sessions"] for x in services),"maintenance":sum(x["maintenance"] for x in services),"failed":sum(x["state"]=="failed" for x in services),"alerts":len(data["alerts"])}
+        if parts==["api","v1","health"]: return health_summary(snap)
+        if len(parts)==4 and parts[:3]==["api","v1","hosts"]:
+            return next((x for x in data["hosts"] if x.get("id")==parts[3]),None)
         if len(parts)>=3 and parts[:3]==["api","v1","services"]:
             if len(parts)==3:return data["services"]
             for item in data["services"]:
                 if item["id"]==parts[3]: return item
             return None
+        if parts[:3]==["api","v1","alerts"]:
+            alerts=list(self.monitoring.alerts(snap) if self.monitoring else (x.to_dict() for x in snap.alerts))
+            if len(parts)==3:return alerts
+            return next((x for x in alerts if x.get("alert_id",x.get("id"))==parts[3]),None)
         mapping={"sessions":"sessions","activity":"activity","alerts":"alerts","readiness":None,"artifacts":None,"backups":None,"hosts":"hosts"}
         if len(parts)==3 and parts[:2]==["api","v1"] and parts[2] in mapping:
             key=parts[2]
@@ -51,7 +59,7 @@ class DashboardApp:
             return data[key]
         return None
     def page(self,path,session=None):
-        snap=self.snapshot(); data=snap.to_dict(); parts=[x for x in path.split("/") if x]
+        snap=self.snapshot(); data=snap.to_dict(); data["alerts"]=list(self.monitoring.alerts(snap) if self.monitoring else snap.alerts); parts=[x for x in path.split("/") if x]
         title="Ultimate BBS Box Observatory"; body=""
         if path=="/" or path=="":
             s=data["services"]; body=f"<h1>{title}</h1><div class='cards'>"+"".join(f"<div class='card'><strong>{html.escape(k)}</strong><br><big>{v}</big></div>" for k,v in (("Services",len(s)),("Running",sum(x['state'] in ('running','ready','maintenance') for x in s)),("Active callers",sum(x['active_sessions'] for x in s)),("Maintenance",sum(x['maintenance'] for x in s)),("Failed",sum(x['state']=='failed' for x in s)),("Alerts",len(data['alerts']))))+"</div>"
@@ -193,5 +201,5 @@ def main(argv=None):
     def backup_action(service):
         active=len(supervisor.instances[service].sessions) if supervisor and service in supervisor.instances else 0
         return backup.create(service,active_sessions=active).to_dict()
-    actions=AdminActionService(supervisor=supervisor,integration_registry=IntegrationRegistry.defaults(),backup=backup_action,install_roots={k:pathlib.Path(v) for k,v in roots.items()},archive_root=a.archive_root); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),actions=actions,require_auth=True); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
+    actions=AdminActionService(supervisor=supervisor,integration_registry=IntegrationRegistry.defaults(),backup=backup_action,install_roots={k:pathlib.Path(v) for k,v in roots.items()},archive_root=a.archive_root); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),actions=actions,require_auth=True,monitoring=MonitoringEngine((pathlib.Path(a.supervisor_state).parent if a.supervisor_state else pathlib.Path('/var/lib/ultimate-bbs-box')))); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
 if __name__=="__main__": main()

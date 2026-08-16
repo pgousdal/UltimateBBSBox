@@ -116,6 +116,9 @@ A granular loopback HTTP fixture verifies role matrices, CSRF, delegated
 actions, backup/qualification/release paths, concurrency, audit privacy, and
 the unprivileged systemd boundary.
 
-### M8.4 — Alerts/remote hosts/monitoring hardening
+### M8.4 — Alerts/host health/monitoring hardening
 
-Future work; not implemented.
+Derived health states, bounded alert lifecycle persistence, local/remote host
+semantics, authenticated health APIs, and an optional unprivileged monitor timer
+are implemented. Notification delivery and remote supervisor RPC remain future
+work.

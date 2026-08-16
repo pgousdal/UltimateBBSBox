@@ -16,6 +16,11 @@ Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and on
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/MILESTONES.md](docs/MILESTONES.md).
 
+M8.4 adds derived health and bounded alert lifecycle monitoring. Use
+`python3 scripts/ubb-monitor.py evaluate --json` for a one-shot local check;
+see [docs/MONITORING.md](docs/MONITORING.md). Remote hosts without telemetry
+remain `UNKNOWN` and no notification or remote-command subsystem is included.
+
 The admin plane's generic backup API preserves integration living state (users,
 messages, configuration and declared file data) separately from immutable M1
 software. Backups are staged, verified and exposed through the authenticated
