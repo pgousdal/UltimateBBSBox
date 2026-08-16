@@ -58,4 +58,14 @@ M7.3a adds a second AmiExpress channel: a pinned GitHub development artifact ide
 
 The contract deliberately does not prescribe a container format, host-side executable installer, native runtime, self-hosted TCP listener, or unattended configuration. AmiExpress can reuse prerequisite resolution, FS-UAE profile handling, golden/working images, serial bridging, and qualification helpers without product branching in M1–M5.
 
+## M7.4 hardening
+
+Tier-1 readiness is evidence-driven rather than test-driven. Shared helpers
+provide immutable-object checks, golden/working invariants, and verified
+live-state backup/restore. The `readiness` command reports `READY`,
+`READY_WITH_HUMAN_REQUIREMENTS`, `NOT_READY`, or `BLOCKED`; it never turns a
+running process into evidence of a real BBS login/menu observation. Current
+AmiExpress promotion and rollback retain software `current` and `previous`
+pointers while leaving live state untouched by default.
+
 M7.2 does not implement AmiExpress, M6 network/core services, BBS publication, a final menu UI, central identity, or mass ingestion.

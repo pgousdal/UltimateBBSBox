@@ -101,6 +101,13 @@ python3 scripts/ubb-supervisor.py --state-dir PATH tick
 
 Place global `--json`, `--catalog`, and `--state-dir` options before the command. The included `systemd/ubb-supervisor.service` is a hardened one-shot tick and `systemd/ubb-supervisor.timer` invokes it every 30 seconds. Installation must create the unprivileged `ubb-supervisor` account and install the checkout at `/opt/ultimate-bbs-box`; M3 does not modify the existing Ansible deployment automatically.
 
+## M7.4 hardening note
+
+Tier-1 hardening rechecks stale-process reconciliation, readiness-timeout
+cleanup, crash restart, maintenance/session-hold races, and sequential caller
+cleanup. These remain generic supervisor invariants; integration readiness is
+separate evidence.
+
 ## Explicitly deferred
 
 M4 owns authorized session/stream routing and M5 owns generic runtime adapters. M7.1 declares Mystic through the native adapter and makes M3 the intended lifecycle owner; the legacy systemd unit is opt-in only during migration. Later work still owns menu presentation, terminal negotiation, authenticated local control IPC, remote-supervisor RPC, network services, product-specific maintenance implementations, BBS publication, and central UBB identity.

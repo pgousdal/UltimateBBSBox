@@ -138,3 +138,5 @@ The production state remains split:
 - M3 state and M4 sessions remain separate from both preservation and living data.
 
 M7.2 and M7.3 prove the protocol has no assumptions about Linux archives or native execution. Product code selects releases and guest-side assisted steps; canonical Amiga profiles and generic helpers resolve private prerequisites and separate golden/working disks; M5 receives only `fs_uae` metadata; M3 owns boot/readiness and M4 owns raw serial-over-TCP sessions. Preservation, licensed platform assets, installation workspace, golden state, runtime working state, and qualification evidence remain distinct. See [INTEGRATIONS.md](INTEGRATIONS.md), [AMIGA-INTEGRATIONS.md](AMIGA-INTEGRATIONS.md), and [AMIGA-PROFILES.md](AMIGA-PROFILES.md).
+
+M7.4 adds product-neutral Tier-1 hardening: structured evidence/readiness aggregation, verified live-state backup/restore, golden/working invariants, crash/reconcile drills, and explicit current/previous software rollback. Real emulator and login observations remain separate human evidence.

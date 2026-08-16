@@ -158,3 +158,11 @@ Mystic still requires assisted first-time `mis -cfg` configuration. Version-scre
 ## Secrets
 
 Do not commit credentials, BBS registration keys, FTN passwords, SMTP secrets, or SSH private keys. They must remain outside preservation objects and catalog manifests and be injected through a later secrets-provider contract.
+
+M7.4 hardens the four Tier-1 reference tracks with common qualification
+evidence, fail-closed backup/restore, crash/restart and route-cleanup checks,
+and explicit readiness reporting. Run
+`python3 scripts/ubb-integration.py readiness mystic-linux` (or an Amiga
+integration) to distinguish PASS from human-required observations. Licensed-
+private Amiga assets and real BBS login/menu observations are never fabricated
+or committed.

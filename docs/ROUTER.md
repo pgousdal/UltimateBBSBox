@@ -100,6 +100,12 @@ python3 scripts/ubb-router.py --json authorize mystic-main
 
 The CLI is a read-only policy/development tool. `authorize --via` confirms that a declared origin is allowed; it does not manufacture the active origin session required by `Router.open_session`. Active streams remain within the embedding process because M4 adds no unauthenticated control API or IPC daemon.
 
+## M7.4 hardening note
+
+Tier-1 hardening rechecks that failed connects, EOF, reconnects, and duplicate
+closes release lifecycle holds exactly once. The router never logs terminal
+content or treats a raw stream as proof that a BBS login/menu was observed.
+
 ## Explicitly deferred
 
 M5 now supplies generic native, FS-UAE, VICE, QEMU, SIMH, PTY, stdio, and TCP runtime plumbing. Later work still owns DOS/MAME/Hatari support, SSH credentials, physical serial, remote-supervisor RPC, actual Mystic/ABBS door handoff, terminal negotiation/emulation, BBS user/security synchronization, central identity, FTN/NNTP/SMTP/UUCP/IRC services, web UI, and a polished ANSI menu. M4 remains the generic authorized routing/session contract those layers call.

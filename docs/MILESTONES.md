@@ -67,6 +67,10 @@ The AmiExpress family integration selects the authentic Aminet `Amix561.lha` 5.6
 
 The AmiExpress family now has an immutable, pinned GitHub development channel alongside the unchanged 5.6.1 museum reference. Current-build discovery validates release metadata, commit identity, asset selection, and GitHub digest; M1 preserves exact bytes; candidate qualification precedes explicit promotion; `current`/`previous` pointers support software rollback without reverting living BBS state. No automatic production update occurs. Real emulator qualification remains `HUMAN_REQUIRED` where licensed assets are unavailable.
 
-### M7.4 — Tier-1 cross-integration hardening
+### M7.4 — Tier-1 cross-integration hardening — COMPLETE
 
-Harden shared behavior only after all three equal-priority Tier-1 integrations provide real evidence.
+Shared qualification, immutable/live-state boundaries, verified backup/restore,
+promotion/rollback gates, lifecycle/route cleanup, and readiness reporting are
+implemented and tested. Real Amiga observations remain explicitly
+`HUMAN_REQUIRED` where licensed-private assets are unavailable; no synthetic
+test is presented as a real boot or login.

@@ -9,7 +9,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from ubb_integrations import IntegrationError, IntegrationRegistry  # noqa: E402
+from ubb_integrations import IntegrationError, IntegrationRegistry, readiness_summary  # noqa: E402
 
 
 def parser():
@@ -22,6 +22,7 @@ def parser():
         item = sub.add_parser(command); item.add_argument("integration_id")
     promote = sub.add_parser("promote"); promote.add_argument("integration_id"); promote.add_argument("--release", required=True); promote.add_argument("--approve-human", action="store_true")
     rollback = sub.add_parser("rollback"); rollback.add_argument("integration_id")
+    readiness = sub.add_parser("readiness"); readiness.add_argument("integration_id"); readiness.add_argument("--artifact-id"); readiness.add_argument("--channel", choices=("stable", "development"))
     for command in ("verify", "install", "configure", "qualify", "status"):
         item = sub.add_parser(command); item.add_argument("integration_id")
         if command in ("verify", "install", "qualify", "status"):
@@ -51,6 +52,19 @@ def main(argv=None):
         elif args.command == "releases": value = [{"key": item.key, "artifact_id": item.artifact_id, "channel": item.channel, "purpose": item.purpose, "source_commit": item.source_commit, "sha256": item.sha256} for item in integration.releases_by_channel()]
         elif args.command == "check-updates": value = integration.check_updates()
         elif args.command == "deployment-status": value = integration.deployment_status(args.install_root)
+        elif args.command == "readiness":
+            if args.channel and hasattr(integration, "releases_by_channel"):
+                choices = integration.releases_by_channel(args.channel)
+                if len(choices) != 1: raise IntegrationError("readiness channel must resolve to exactly one release")
+                artifact_id = choices[0].artifact_id
+            evidence_path = pathlib.Path(args.install_root) / "qualification" / f"{artifact_id}.json"
+            if not evidence_path.is_file():
+                evidence_path = pathlib.Path(args.install_root) / "qualification" / "latest.json"
+            if evidence_path.is_file():
+                evidence = json.loads(evidence_path.read_text(encoding="utf-8")).get("results", [])
+            else:
+                evidence = [{"status": "BLOCKED", "detail": "no qualification evidence recorded"}]
+            value = readiness_summary(evidence, integration=integration.id, release=artifact_id)
         elif args.command == "promote": value = integration.promote(args.install_root, args.release, approve_human=args.approve_human)
         elif args.command == "rollback": value = integration.rollback(args.install_root)
         elif args.command == "install":

@@ -106,6 +106,12 @@ The runtime CLI is diagnostic. Operators continue to use `ubb-supervisor.py` for
 
 Configuration is trusted administrator/repository data but rejects unknown fields, relative executables/directories, malformed argv/environment/ports, conflicting PTY modes, and unsupported stream types. No shell snippets, passwords, terminal bytes, or environment values are journaled. Physical serial devices, Telnet negotiation, remote RPC, libvirt, disk creation, guest installation, and dynamic plugins are outside M5.
 
+## M7.4 hardening note
+
+Tier-1 checks exercise adapter failure/reconcile and bridge cleanup in
+disposable fixtures. Real FS-UAE boot still requires operator-supplied licensed
+Kickstart/AmigaOS assets and is recorded as human evidence when absent.
+
 ## Explicitly deferred
 
 M5 does not contain product behavior. M7.1 supplies Mystic's native metadata and M7.2/M7.3 supply ABBS/AmiExpress FS-UAE metadata outside runtime core. FS-UAE's configured raw TCP serial listener is handled by the existing generic TCP readiness/stream contracts; no product branch was added. NiKom, C-Net, DOS setup, MAME/Hatari integration, physical serial hardware, remote-supervisor RPC, FTN/NNTP/SMTP/IRC, and BBS filebase publication remain outside M5.
