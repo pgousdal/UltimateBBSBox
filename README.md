@@ -220,3 +220,7 @@ generic BBS mappings, and optional explicit public modes. See
 M6.5 adds private-first IRC infrastructure with explicit TLS/public opt-in and
 generic BBS bridge intent. See [docs/IRC.md](docs/IRC.md); tests do not expose
 public IRC.
+
+M6.6 adds generic FTN/BinkP transport and tosser intent with strict addresses,
+multiple networks, bounded spool policies, and BBS mappings. See
+[docs/FTN.md](docs/FTN.md); tests do not connect to real FTN peers.

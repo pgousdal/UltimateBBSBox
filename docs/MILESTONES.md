@@ -159,6 +159,13 @@ generic BBS bridge mappings, external secret references, and privacy-safe
 diagnostics are implemented. Public IRC and Tier-1 bridge qualification remain
 `HUMAN_REQUIRED`.
 
+### M6.6 — FTN transport/core
+
+BinkP-oriented FTN network/address/peer models, safe spool and area intent,
+generic BBS adapters, deterministic mailer/tosser configuration, and privacy-safe
+diagnostics are implemented. Real peer and Tier-1 qualification remain
+`HUMAN_REQUIRED`.
+
 ### M6.4 — NNTP / Usenet-style news
 
 INN-oriented private/public mode intent, bounded groups and retention, generic
