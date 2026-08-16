@@ -1,0 +1,38 @@
+---
+# Full convergence playbook for the Ultimate BBS Box.
+#
+# Usage:
+#   ansible-playbook playbooks/site.yml
+#   ansible-playbook playbooks/site.yml --tags mystic_bbs
+#   ansible-playbook playbooks/site.yml --check --diff
+
+- name: Converge Ultimate BBS Box
+  hosts: bbs_hosts
+  gather_facts: true
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      tags: always
+
+  roles:
+    - role: common
+      tags: [common, base]
+
+    - role: serial_ports
+      tags: [serial, serial_ports]
+
+    - role: mystic_bbs
+      tags: [mystic, mystic_bbs, bbs]
+
+    - role: network_gateway
+      tags: [network, gateway, firewall]
+
+    - role: backup
+      tags: [backup]
+
+    - role: monitoring
+      tags: [monitoring]

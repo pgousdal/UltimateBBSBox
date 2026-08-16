@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""
+Managed by Ansible - ultimate-bbs-box (serial_ports role)
+
+Applies RS485 half-duplex mode and baud rate to configured serial
+ports using pyserial's rs485 ioctl wrapper. Invoked either from a
+udev RUN+= rule (single device, passed as argv[1]) or from the
+bbs-rs485-setup systemd oneshot unit at boot (no argv -> apply all).
+"""
+import sys
+
+import serial
+import serial.rs485
+
+RS485_PORTS = {
+{% for dev in serial_devices if dev.mode == 'rs485' %}
+    "{{ dev.device }}": {
+        "baud": {{ dev.baud }},
+        "delay_before_us": {{ dev.rs485_delay_rts_before_send_us | default(0) }},
+        "delay_after_us": {{ dev.rs485_delay_rts_after_send_us | default(0) }},
+    },
+{% endfor %}
+}
+
+
+def apply(device: str, cfg: dict) -> None:
+    try:
+        port = serial.Serial(device, baudrate=cfg["baud"])
+        port.rs485_mode = serial.rs485.RS485Settings(
+            rts_level_for_tx=True,
+            rts_level_for_rx=False,
+            delay_before_tx=cfg["delay_before_us"] / 1_000_000,
+            delay_before_rx=cfg["delay_after_us"] / 1_000_000,
+        )
+        port.close()
+        print(f"[set-rs485] {device}: OK (baud={cfg['baud']})")
+    except (serial.SerialException, OSError) as exc:
+        print(f"[set-rs485] {device}: FAILED - {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def main() -> None:
+    targets = sys.argv[1:] if len(sys.argv) > 1 else list(RS485_PORTS.keys())
+    for device in targets:
+        cfg = RS485_PORTS.get(device)
+        if cfg is None:
+            print(f"[set-rs485] {device}: not in configured RS485_PORTS, skipping")
+            continue
+        apply(device, cfg)
+
+
+if __name__ == "__main__":
+    main()

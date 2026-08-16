@@ -1,0 +1,11 @@
+# Managed by Ansible - ultimate-bbs-box (backup role)
+# Cron-equivalent schedule: {{ backup_schedule }}
+[Unit]
+Description=Daily timer for Mystic BBS backup
+
+[Timer]
+OnCalendar={{ backup_oncalendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

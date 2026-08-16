@@ -1,0 +1,9 @@
+kind: endpoint
+schema_version: 1
+id: endpoint-mystic-local
+# M0 example only. The existing Ansible Mystic role is not yet driven by this manifest.
+type: tcp
+host: 127.0.0.1
+port: 6400
+protocol: telnet
+network_zone: internal_services

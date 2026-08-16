@@ -1,0 +1,41 @@
+---
+- name: Ensure backup destination directory exists
+  ansible.builtin.file:
+    path: "{{ backup_dest_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Deploy backup script
+  ansible.builtin.template:
+    src: mystic-backup.sh.j2
+    dest: /usr/local/sbin/mystic-backup.sh
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Deploy backup systemd service
+  ansible.builtin.template:
+    src: mystic-backup.service.j2
+    dest: /etc/systemd/system/mystic-backup.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload systemd
+
+- name: Deploy backup systemd timer
+  ansible.builtin.template:
+    src: mystic-backup.timer.j2
+    dest: /etc/systemd/system/mystic-backup.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload systemd
+
+- name: Enable and start backup timer
+  ansible.builtin.systemd:
+    name: mystic-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true

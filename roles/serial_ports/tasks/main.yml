@@ -1,0 +1,58 @@
+---
+- name: Install serial tooling
+  ansible.builtin.apt:
+    name:
+      - setserial
+      - python3-serial
+    state: present
+
+- name: Deploy udev rules for stable serial device names
+  ansible.builtin.template:
+    src: 99-bbs-serial.rules.j2
+    dest: /etc/udev/rules.d/99-bbs-serial.rules
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload udev
+
+- name: Deploy RS485 configuration helper script
+  ansible.builtin.template:
+    src: set_rs485.py.j2
+    dest: /usr/local/sbin/set-rs485.py
+    owner: root
+    group: root
+    mode: "0755"
+  when: serial_devices | selectattr('mode', 'equalto', 'rs485') | list | length > 0
+
+- name: Deploy systemd oneshot unit to apply RS485 settings at boot
+  ansible.builtin.template:
+    src: bbs-rs485-setup.service.j2
+    dest: /etc/systemd/system/bbs-rs485-setup.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: serial_devices | selectattr('mode', 'equalto', 'rs485') | list | length > 0
+  notify:
+    - reload systemd
+    - enable rs485 setup service
+
+- name: Flush handlers now so udev + systemd are ready before verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify configured serial devices exist
+  ansible.builtin.stat:
+    path: "{{ item.device }}"
+  register: serial_dev_check
+  loop: "{{ serial_devices }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: Warn about missing serial devices
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: {{ item.item.device }} not found on this host. Check that the
+      RS232/RS485 hardware is present and the kernel module is loaded.
+  loop: "{{ serial_dev_check.results }}"
+  loop_control:
+    label: "{{ item.item.device }}"
+  when: not item.stat.exists

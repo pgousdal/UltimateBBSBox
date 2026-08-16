@@ -1,0 +1,17 @@
+# Managed by Ansible - ultimate-bbs-box (network_gateway role)
+[DEFAULT]
+bantime  = {{ fail2ban_bantime }}
+findtime = 10m
+maxretry = {{ fail2ban_maxretry }}
+
+[sshd]
+enabled = true
+port    = {{ ssh_port }}
+
+# Add a custom filter under filter.d/mystic-telnet.conf matching your
+# Mystic login-failure log format, then enable a matching jail here,
+# e.g.:
+# [mystic-telnet]
+# enabled  = true
+# port     = {{ mystic_telnet_port | default(23) }}
+# logpath  = {{ mystic_home | default('/opt/mystic') }}/logs/mystic-stdout.log

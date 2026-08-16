@@ -1,0 +1,113 @@
+---
+- name: Install runtime dependencies (Mystic ships mostly-static, but these help)
+  ansible.builtin.apt:
+    name:
+      - libc6
+      - ca-certificates
+      - unzip
+      - tar
+    state: present
+
+- name: Create mystic group
+  ansible.builtin.group:
+    name: "{{ mystic_group }}"
+    state: present
+
+- name: Create mystic service user
+  ansible.builtin.user:
+    name: "{{ mystic_user }}"
+    group: "{{ mystic_group }}"
+    home: "{{ mystic_home }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create Mystic BBS directory tree
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ mystic_user }}"
+    group: "{{ mystic_group }}"
+    mode: "0750"
+  loop:
+    - "{{ mystic_home }}"
+    - "{{ mystic_doors_dir }}"
+    - "{{ mystic_home }}/data"
+    - "{{ mystic_home }}/text"
+    - "{{ mystic_home }}/logs"
+
+# NOTE: Verify the exact archive filename on
+# https://www.mysticbbs.com/downloads before first run - Mystic's
+# release filenames change slightly between versions.
+- name: Check if Mystic BBS binary is already installed
+  ansible.builtin.stat:
+    path: "{{ mystic_home }}/mis"
+  register: mystic_binary
+
+- name: Download Mystic BBS release archive
+  ansible.builtin.get_url:
+    url: "{{ mystic_download_base }}/mystic_{{ mystic_version | replace('.', '_') }}_{{ mystic_arch }}.tar.gz"
+    dest: "/tmp/mystic_{{ mystic_version }}.tar.gz"
+    mode: "0644"
+  when: not mystic_binary.stat.exists
+
+- name: Extract Mystic BBS archive into install directory
+  ansible.builtin.unarchive:
+    src: "/tmp/mystic_{{ mystic_version }}.tar.gz"
+    dest: "{{ mystic_home }}"
+    remote_src: true
+    owner: "{{ mystic_user }}"
+    group: "{{ mystic_group }}"
+  when: not mystic_binary.stat.exists
+
+- name: Ensure Mystic binaries are executable
+  ansible.builtin.file:
+    path: "{{ mystic_home }}/{{ item }}"
+    mode: "0750"
+    owner: "{{ mystic_user }}"
+    group: "{{ mystic_group }}"
+  loop:
+    - mis
+    - mudit
+    - mishttp
+  ignore_errors: true  # not every release ships every binary
+
+# --- Doors ------------------------------------------------------
+- name: Deploy .mpy door packages
+  ansible.builtin.copy:
+    src: "mystic_doors/{{ item.src }}/"
+    dest: "{{ mystic_doors_dir }}/{{ item.name }}/"
+    owner: "{{ mystic_user }}"
+    group: "{{ mystic_group }}"
+    mode: "0750"
+  loop: "{{ mystic_doors }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# --- systemd service ----------------------------------------------
+- name: Deploy systemd unit for Mystic BBS
+  ansible.builtin.template:
+    src: mystic-bbs.service.j2
+    dest: /etc/systemd/system/mystic-bbs.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - reload systemd
+    - restart mystic-bbs
+
+- name: Enable and start Mystic BBS service
+  ansible.builtin.systemd:
+    name: mystic-bbs.service
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Print first-run reminder
+  ansible.builtin.debug:
+    msg: >-
+      Mystic BBS binaries are deployed and the systemd service is running.
+      Initial BBS configuration (message bases, menus, door registration in
+      MIS) is interactive - log in as {{ mystic_user }} and run
+      '{{ mystic_home }}/mis -cfg' once to complete first-time setup, then
+      restart the service. See roles/mystic_bbs/README for door wiring notes.

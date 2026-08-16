@@ -1,0 +1,14 @@
+---
+- name: reload udev
+  ansible.builtin.command: udevadm control --reload-rules
+  changed_when: false
+
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: enable rs485 setup service
+  ansible.builtin.systemd:
+    name: bbs-rs485-setup.service
+    enabled: true
+    state: started

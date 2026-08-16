@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultimate-bbs-box.invalid/schemas/artifact-v1.schema.json",
+  "title": "Ultimate BBS Box preservation artifact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "id", "artifact", "provenance", "rights", "preservation"],
+  "properties": {
+    "kind": {"const": "artifact"},
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "original_filename", "sha256", "size"],
+      "properties": {
+        "role": {"enum": ["preservation_original", "install_source", "documentation", "source_code", "bbs_distribution", "derived"]},
+        "original_filename": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "sha1": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
+        "md5": {"type": "string", "pattern": "^[0-9a-fA-F]{32}$"},
+        "size": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string"},
+        "derived_from": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["acquired_at", "source"],
+      "properties": {
+        "acquired_at": {"type": "string", "format": "date-time"},
+        "source": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string"},
+        "publisher": {"type": "string"},
+        "notes": {"type": "string"}
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "preserve_locally", "install_locally", "redistribute_original", "publish_to_bbs_filebase"],
+      "properties": {
+        "status": {"enum": ["public_domain", "freeware", "shareware", "open_source", "commercial", "licensed", "unknown"]},
+        "license": {"type": "string"},
+        "preserve_locally": {"type": "boolean"},
+        "install_locally": {"type": "boolean"},
+        "redistribute_original": {"type": "boolean"},
+        "publish_to_bbs_filebase": {"type": "boolean"},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "preservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "immutable"],
+      "properties": {
+        "class": {"enum": ["original", "reconstructed", "derived", "private_preservation"]},
+        "immutable": {"type": "boolean"},
+        "status": {"enum": ["READY", "SOURCE_ONLY", "RECONSTRUCTABLE", "KNOWN_MEDIA", "DEMO_ONLY", "LICENSE_RESTRICTED", "WANTED", "LOST", "HISTORICAL_ONLY", "UNVERIFIED"]}
+      }
+    }
+  }
+}

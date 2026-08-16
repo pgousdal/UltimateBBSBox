@@ -1,0 +1,44 @@
+---
+# Run this once against a fresh Debian install, connecting as root
+# (or an existing sudo user), to create the ansible-managed admin
+# account and enable passwordless sudo. After this, switch inventory
+# ansible_user back to admin_username for all further runs.
+#
+# Usage:
+#   ansible-playbook playbooks/bootstrap.yml -u root -k
+
+- name: Bootstrap admin account for Ansible management
+  hosts: bbs_hosts
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Ensure admin group exists
+      ansible.builtin.group:
+        name: "{{ admin_username }}"
+        state: present
+
+    - name: Create admin user
+      ansible.builtin.user:
+        name: "{{ admin_username }}"
+        group: "{{ admin_username }}"
+        shell: /bin/bash
+        create_home: true
+
+    - name: Authorize local SSH public key for admin user
+      ansible.posix.authorized_key:
+        user: "{{ admin_username }}"
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+        state: present
+
+    - name: Grant passwordless sudo to admin user
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/90-{{ admin_username }}"
+        content: "{{ admin_username }} ALL=(ALL) NOPASSWD:ALL\n"
+        mode: "0440"
+        validate: "visudo -cf %s"
+
+    - name: Ensure python3 is present (required for later Ansible runs)
+      ansible.builtin.raw: |
+        test -e /usr/bin/python3 || (apt-get update && apt-get install -y python3-minimal)
+      changed_when: false

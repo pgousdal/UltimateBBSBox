@@ -1,0 +1,7 @@
+# Managed by Ansible - ultimate-bbs-box (serial_ports role)
+# Creates stable /dev/<symlink> names for each configured serial port,
+# and (for RS485 ports) triggers the RS485 config helper on hotplug.
+{% for dev in serial_devices %}
+KERNEL=="{{ dev.device | basename }}", SYMLINK+="{{ dev.symlink }}", GROUP="dialout", MODE="0660"{% if dev.mode == 'rs485' %}, RUN+="/usr/local/sbin/set-rs485.py {{ dev.device }}"{% endif %}
+
+{% endfor %}

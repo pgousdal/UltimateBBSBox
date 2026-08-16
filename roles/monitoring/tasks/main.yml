@@ -1,0 +1,61 @@
+---
+- name: Determine host architecture for node_exporter download
+  ansible.builtin.set_fact:
+    node_exporter_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+  when: node_exporter_enabled
+
+- name: Create node_exporter system user
+  ansible.builtin.user:
+    name: node_exporter
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+  when: node_exporter_enabled
+
+- name: Check if node_exporter is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/node_exporter
+  register: node_exporter_bin
+  when: node_exporter_enabled
+
+- name: Download and extract node_exporter
+  ansible.builtin.unarchive:
+    src: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+    dest: /tmp
+    remote_src: true
+  when: node_exporter_enabled and not node_exporter_bin.stat.exists
+
+- name: Install node_exporter binary
+  ansible.builtin.copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0755"
+  when: node_exporter_enabled and not node_exporter_bin.stat.exists
+
+- name: Deploy node_exporter systemd unit
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: node_exporter_enabled
+  notify: restart node_exporter
+
+- name: Enable and start node_exporter
+  ansible.builtin.systemd:
+    name: node_exporter
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: node_exporter_enabled
+
+- name: Allow node_exporter port through ufw (LAN scrape access)
+  community.general.ufw:
+    rule: allow
+    port: "{{ node_exporter_port | string }}"
+    proto: tcp
+  when: node_exporter_enabled

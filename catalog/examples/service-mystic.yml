@@ -1,0 +1,35 @@
+kind: service
+schema_version: 1
+id: bbs-mystic-example
+service:
+  type: bbs
+  title: Mystic BBS example
+  family: mystic
+  version: 1.12.A3
+  platform: linux-x86_64
+  terminal:
+    encoding: cp437
+    display: ansi
+    columns: 80
+    rows: 25
+endpoint: endpoint-mystic-local
+exposure:
+  main_menu: true
+  via_bbs: []
+access:
+  direct_allowed: true
+lifecycle:
+  mode: on_demand
+  sharing: multiuser
+  idle_timeout_seconds: 900
+  startup_timeout_seconds: 60
+  restart: on_failure
+  shutdown_policy: when_idle
+maintenance:
+  jobs:
+    - name: nightly-network-exchange
+      schedule: "daily 03:00"
+      action: network_exchange
+      wake_if_stopped: true
+      shutdown_after: true
+      timeout_seconds: 1800

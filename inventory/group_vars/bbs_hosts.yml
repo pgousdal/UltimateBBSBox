@@ -1,0 +1,76 @@
+---
+# ============================================================
+# Ultimate BBS Box - central configuration
+# ============================================================
+
+# --- common role -------------------------------------------------
+timezone: "Europe/Oslo"
+admin_username: "ansible"
+ssh_port: 22
+allow_root_login: false
+unattended_upgrades_enabled: true
+
+firewall_allowed_tcp_ports:
+  - "{{ ssh_port }}"
+  - 23    # telnet (BBS)
+  - 6400  # Mystic telnet default (adjust to taste)
+  - 513   # rlogin, if used
+  - 22022 # SSH-BBS alt port, optional
+
+# --- serial_ports role --------------------------------------------
+# Each entry describes one RS232/RS485 port exposed by the mini-PC.
+# 'mode' controls whether udev creates a friendly symlink only, or
+# whether a getty is attached for direct dial/terminal access.
+serial_devices:
+  - device: "/dev/ttyS0"
+    symlink: "bbs-modem0"
+    mode: "rs232"
+    baud: 38400
+    attach_getty: false
+  - device: "/dev/ttyS1"
+    symlink: "bbs-rs485-0"
+    mode: "rs485"
+    baud: 19200
+    attach_getty: false
+    rs485_delay_rts_before_send_us: 0
+    rs485_delay_rts_after_send_us: 0
+
+# --- mystic_bbs role -----------------------------------------------
+mystic_version: "1.12.A3"
+mystic_arch: "linux-x64"          # linux-x64 / linux-arm64
+mystic_download_base: "https://www.mysticbbs.com/downloads"
+mystic_user: "bbs"
+mystic_group: "bbs"
+mystic_home: "/opt/mystic"
+mystic_telnet_port: 6400
+mystic_binkp_port: 24554
+mystic_enable_telnet: true
+mystic_enable_ssh: false
+mystic_doors_dir: "{{ mystic_home }}/doors"
+
+# .mpy doors to deploy (from OpenRetroTools) - path is on the Ansible
+# control node, relative to files/mystic_doors/
+mystic_doors:
+  - name: ansiradar
+    src: "ansiradar-mpy"
+  - name: wikidoor
+    src: "wikidoor-mpy"
+  - name: aminetdoor
+    src: "aminetdoor-mpy"
+
+# --- network_gateway role -------------------------------------------
+fail2ban_enabled: true
+fail2ban_bantime: "1h"
+fail2ban_maxretry: 5
+
+# --- backup role -----------------------------------------------------
+backup_dest_dir: "/var/backups/mystic"
+backup_retention_days: 14
+backup_schedule: "0 3 * * *"   # daily at 03:00
+# Optional: rsync/rclone remote target (leave empty to disable off-box copy)
+backup_remote_target: ""
+
+# --- monitoring role ----------------------------------------------
+node_exporter_enabled: true
+node_exporter_version: "1.8.2"
+node_exporter_port: 9100

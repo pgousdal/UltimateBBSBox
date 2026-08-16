@@ -1,0 +1,22 @@
+kind: artifact
+schema_version: 1
+id: example-mystic-archive
+artifact:
+  role: preservation_original
+  original_filename: mystic_example.tar.gz
+  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  size: 0
+  media_type: application/gzip
+provenance:
+  acquired_at: "2026-08-16T00:00:00+02:00"
+  source: example only - not a real preservation object
+rights:
+  status: unknown
+  preserve_locally: true
+  install_locally: false
+  redistribute_original: false
+  publish_to_bbs_filebase: false
+preservation:
+  class: original
+  immutable: true
+  status: UNVERIFIED

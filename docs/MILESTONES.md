@@ -1,0 +1,42 @@
+# Delivery milestones
+
+## M0 — Contracts and repository foundation — COMPLETE
+
+M0 freezes the core vocabulary and establishes executable schema checks.
+
+Acceptance:
+
+- architecture contract documents caller authentication ownership, modular integrations, remote endpoints, lifecycle, scheduled wake, and preservation-first acquisition;
+- JSON Schema contracts exist for artifact, endpoint, service, and integration manifests;
+- example manifests cover a local BBS and a remote shell reachable only through a BBS;
+- repository has a single `make check` entry point and CI workflow;
+- existing Mystic Ansible role continues to syntax-check and is explicitly classified as an early integration rather than core;
+- no mass-import or mass-install assumption exists in M0.
+
+## M1 — Preservation archive and catalog
+
+Implement immutable content-addressed storage, provenance, rights decisions, acquisition quarantine, derived-artifact lineage, verification, export bundles, and rights-gated publication artifacts.
+
+## M2 — Service and endpoint registry
+
+Persist and query service/endpoint manifests. Resolve local, serial, TCP, SSH, and remote-supervisor endpoints without product-specific branching.
+
+## M3 — Lifecycle supervisor
+
+Implement `on_demand`, `always_on`, readiness, idle shutdown, multiuser sharing, crash restart, and scheduled wake/maintenance.
+
+## M4 — Session router and exposure policy
+
+Implement main-menu exposure, via-BBS-only services, stream handoff, terminal metadata, and remote endpoint routing. No mandatory UBB end-user login.
+
+## M5 — Runtime adapters
+
+Add adapters incrementally: native Linux, DOS, FS-UAE, VICE, MAME, Hatari, QEMU, SIMH, and others as integrations require them.
+
+## M6 — BBS network/core services
+
+Add DNS, NTP/time, SMTP/POP3/IMAP, NNTP/INN, IRCd, FTP/TFTP, UUCP, FTN (binkd/Husky), QWK/REP, Blue Wave, modem/serial bridges, and rights/policy-controlled gateways.
+
+## M7+ — Museum integrations
+
+Add BBS, Door, Interactive Fiction, and MUD/Online World integrations one at a time. Each integration is independently preserved, documented, installed, and qualified.

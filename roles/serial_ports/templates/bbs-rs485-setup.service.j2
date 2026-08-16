@@ -1,0 +1,13 @@
+# Managed by Ansible - ultimate-bbs-box (serial_ports role)
+[Unit]
+Description=Apply RS485 mode to configured serial ports
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/set-rs485.py
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

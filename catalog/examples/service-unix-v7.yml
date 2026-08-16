@@ -1,0 +1,28 @@
+kind: service
+schema_version: 1
+id: shell-unix-v7-example
+service:
+  type: shell
+  title: UNIX V7 PDP-11 example
+  family: unix-v7
+  platform: pdp11
+  terminal:
+    encoding: ascii
+    display: text
+    columns: 80
+    rows: 24
+endpoint: endpoint-unix-v7-remote
+exposure:
+  main_menu: false
+  via_bbs:
+    - bbs-mystic-example
+access:
+  direct_allowed: false
+  notes: Authentication is performed by the destination, not by UBB.
+lifecycle:
+  mode: on_demand
+  sharing: multiuser
+  idle_timeout_seconds: 1800
+  startup_timeout_seconds: 120
+  restart: on_failure
+  shutdown_policy: when_idle

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Managed by Ansible - ultimate-bbs-box (backup role)
+set -euo pipefail
+
+DEST="{{ backup_dest_dir }}"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+ARCHIVE="${DEST}/mystic-${STAMP}.tar.gz"
+RETENTION_DAYS="{{ backup_retention_days }}"
+SOURCE="{{ mystic_home | default('/opt/mystic') }}/data {{ mystic_home | default('/opt/mystic') }}/text"
+
+mkdir -p "${DEST}"
+
+tar -czf "${ARCHIVE}" ${SOURCE} 2>/dev/null || {
+    echo "[mystic-backup] WARNING: some paths could not be archived" >&2
+}
+
+echo "[mystic-backup] wrote ${ARCHIVE}"
+
+{% if backup_remote_target %}
+rsync -az "${ARCHIVE}" "{{ backup_remote_target }}"
+echo "[mystic-backup] synced to {{ backup_remote_target }}"
+{% endif %}
+
+find "${DEST}" -name 'mystic-*.tar.gz' -mtime "+${RETENTION_DAYS}" -delete
+echo "[mystic-backup] pruned archives older than ${RETENTION_DAYS} days"

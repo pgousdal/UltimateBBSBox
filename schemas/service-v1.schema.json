@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultimate-bbs-box.invalid/schemas/service-v1.schema.json",
+  "title": "Ultimate BBS Box service v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schema_version", "id", "service", "endpoint", "exposure", "lifecycle"],
+  "properties": {
+    "kind": {"const": "service"},
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "title"],
+      "properties": {
+        "type": {"enum": ["bbs", "door", "mud_world", "talker", "interactive_fiction", "shell", "irc", "nntp", "gopher", "other"]},
+        "title": {"type": "string", "minLength": 1},
+        "family": {"type": "string"},
+        "version": {"type": "string"},
+        "platform": {"type": "string"},
+        "terminal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "encoding": {"type": "string"},
+            "display": {"type": "string"},
+            "columns": {"type": "integer", "minimum": 1},
+            "rows": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "endpoint": {"type": "string", "minLength": 1},
+    "exposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["main_menu"],
+      "properties": {
+        "main_menu": {"type": "boolean"},
+        "via_bbs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "admin_only": {"type": "boolean", "default": false}
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direct_allowed": {"type": "boolean", "default": true},
+        "notes": {"type": "string"}
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "sharing"],
+      "properties": {
+        "mode": {"enum": ["on_demand", "always_on"]},
+        "sharing": {"enum": ["single_session", "multiuser"]},
+        "idle_timeout_seconds": {"type": "integer", "minimum": 0},
+        "startup_timeout_seconds": {"type": "integer", "minimum": 1},
+        "restart": {"enum": ["never", "on_failure", "always"]},
+        "shutdown_policy": {"enum": ["when_idle", "manual", "if_started_for_maintenance"]}
+      }
+    },
+    "maintenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "schedule", "action"],
+            "properties": {
+              "name": {"type": "string"},
+              "schedule": {"type": "string"},
+              "action": {"type": "string"},
+              "wake_if_stopped": {"type": "boolean", "default": true},
+              "shutdown_after": {"type": "boolean", "default": true},
+              "timeout_seconds": {"type": "integer", "minimum": 1}
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+# Managed by Ansible - ultimate-bbs-box (backup role)
+[Unit]
+Description=Backup Mystic BBS data
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mystic-backup.sh

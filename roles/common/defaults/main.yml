@@ -1,0 +1,17 @@
+---
+common_base_packages:
+  - vim
+  - htop
+  - tmux
+  - curl
+  - wget
+  - git
+  - ca-certificates
+  - gnupg
+  - unattended-upgrades
+  - apt-listchanges
+  - ufw
+  - fail2ban
+  - chrony
+  - setserial
+  - minicom

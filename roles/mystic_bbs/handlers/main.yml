@@ -1,0 +1,9 @@
+---
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: restart mystic-bbs
+  ansible.builtin.systemd:
+    name: mystic-bbs.service
+    state: restarted
