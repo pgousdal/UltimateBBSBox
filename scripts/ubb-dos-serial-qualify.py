@@ -50,16 +50,27 @@ def install_boot_files(drive_c: Path, serialtest: Path) -> None:
     (drive_c / "UBBQUAL").mkdir(parents=True, exist_ok=True)
     # The qualification binary is a tiny .COM image (NASM -f bin); retaining
     # the .COM suffix avoids DOS attempting to parse it as an MZ executable.
-    (drive_c / "UBBQUAL" / "SERIALTEST.COM").write_bytes(serialtest.read_bytes())
+    (drive_c / "UBBQUAL" / "UBBTEST.COM").write_bytes(serialtest.read_bytes())
+    def replace_text(path: Path, content: str) -> None:
+        # Preserved materialized files may be read-only; replacing within the
+        # disposable directory is safe and avoids mutating the source tree.
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        path.write_text(content, encoding="ascii")
+
     command = drive_c / "FREEDOS" / "BIN" / "COMMAND.COM"
     if not command.exists():
         raise RuntimeError("FreeDOS COMMAND.COM is missing from the disposable working tree")
-    (drive_c / "COMMAND.COM").write_bytes(command.read_bytes())
-    (drive_c / "FDCONFIG.SYS").write_text(
-        "SHELL=\\COMMAND.COM /E:2048 /P=\\AUTOEXEC.BAT\n", encoding="ascii")
-    (drive_c / "AUTOEXEC.BAT").write_text(
+    root_command = drive_c / "COMMAND.COM"
+    if not root_command.exists():
+        root_command.write_bytes(command.read_bytes())
+    replace_text(drive_c / "FDCONFIG.SYS",
+        "SHELL=\\COMMAND.COM /E:2048 /P=\\AUTOEXEC.BAT\n")
+    replace_text(drive_c / "AUTOEXEC.BAT",
         "@echo off\r\nmd C:\\UBBQUAL > nul\r\n"
-        "C:\\UBBQUAL\\SERIALTEST.COM EXCHANGE COM1\r\n", encoding="ascii")
+        "C:\\UBBQUAL\\UBBTEST.COM EXCHANGE COM1\r\n")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -81,15 +92,31 @@ def run(args: argparse.Namespace) -> int:
     command = [str(args.dosemu), "-f", str(config)]
     process = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    result_path = drive_c / "UBBQUAL" / "SERIAL.RESULT"
-    ready_path = drive_c / "UBBQUAL" / "SERIAL.READY"
+    result_path = drive_c / "UBBQUAL" / "SERIAL.RST"
+    ready_path = drive_c / "UBBQUAL" / "READY.RST"
     try:
         deadline = time.monotonic() + args.timeout
+        boot_seen = False
+        boot_time = 0.0
         while time.monotonic() < deadline and not ready_path.exists():
             if process.poll() is not None:
                 raise RuntimeError("DOSEMU2 exited before SERIAL.READY")
-            time.sleep(0.05)
-        if not ready_path.exists():
+            if process.stdout is not None:
+                ready, _, _ = select.select([process.stdout], [], [], 0.05)
+                if ready:
+                    text = os.read(process.stdout.fileno(), 4096).decode("ascii", "ignore")
+                    if "FreeDOS kernel" in text:
+                        boot_seen = True
+                        boot_time = time.monotonic()
+            else:
+                time.sleep(0.05)
+            # Some DOSEMU host-directory mappings are read-only to DOS.  The
+            # banner is a bounded fallback readiness signal so COM diagnosis
+            # can still proceed; result-file persistence remains independently
+            # required and is reported if absent.
+            if boot_seen and time.monotonic() - boot_time >= 1:
+                break
+        if not ready_path.exists() and not boot_seen:
             raise RuntimeError("timeout waiting for guest SERIAL.READY")
         os.write(master, EXPECTED_RX)
         reply = read_exact(master, len(EXPECTED_TX), deadline)
