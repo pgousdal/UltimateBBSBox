@@ -1,0 +1,15 @@
+kind: service
+schema_version: 1
+id: mail-core
+service:
+  type: infrastructure
+  title: UBB Mail Core
+  family: mail-routing
+exposure:
+  main_menu: false
+  admin_only: true
+endpoint: mail-core
+lifecycle:
+  mode: always_on
+  sharing: multiuser
+  restart: on_failure

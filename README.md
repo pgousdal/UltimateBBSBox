@@ -27,6 +27,10 @@ ZeroTier, and Nebula are alternative configuration providers. The home site
 remains private, public ingress is explicit, and raw Telnet hostname routing is
 not assumed. See [docs/EDGE.md](docs/EDGE.md).
 
+M6.3 adds a Postfix edge/Mail Core model for Internet SMTP, explicit MX/SPF/DKIM/
+DMARC intent, recipient validation, and product-neutral BBS mail adapters. No
+real public DNS or Internet mail is changed by tests; see [docs/MAIL.md](docs/MAIL.md).
+
 The admin plane's generic backup API preserves integration living state (users,
 messages, configuration and declared file data) separately from immutable M1
 software. Backups are staged, verified and exposed through the authenticated

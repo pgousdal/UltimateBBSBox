@@ -1,0 +1,7 @@
+kind: endpoint
+schema_version: 1
+id: mail-core
+type: tcp
+host: 127.0.0.1
+port: 2525
+protocol: smtp

@@ -1,0 +1,7 @@
+kind: endpoint
+schema_version: 1
+id: mail-edge
+type: tcp
+host: 127.0.0.1
+port: 25
+protocol: smtp

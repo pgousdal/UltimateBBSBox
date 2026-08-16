@@ -144,3 +144,10 @@ connectivity and VPS qualification remain operator `HUMAN_REQUIRED` work.
 
 M6.3 SMTP/local mail, M6.4 NNTP, M6.5 IRCd, M6.6 FTN, M6.7 QWK/Blue Wave,
 and M6.8 network hardening remain future milestones.
+
+### M6.3 — Internet Mail
+
+Postfix edge/Mail Core intent, public mail-domain and DNS-policy models,
+privacy-safe recipient routing, generic BBS mail adapter modes, and deterministic
+configuration diagnostics are implemented. Real Internet qualification remains
+operator `HUMAN_REQUIRED` work.

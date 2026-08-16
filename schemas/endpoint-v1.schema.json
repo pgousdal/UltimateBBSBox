@@ -13,7 +13,7 @@
     "host": {"type": "string"},
     "port": {"type": "integer", "minimum": 1, "maximum": 65535},
     "connect_timeout_seconds": {"type": "number", "exclusiveMinimum": 0},
-    "protocol": {"enum": ["raw_tcp", "telnet", "ssh", "serial", "supervisor", "dns", "ntp"]},
+    "protocol": {"enum": ["raw_tcp", "telnet", "ssh", "serial", "supervisor", "dns", "ntp", "smtp"]},
     "device": {"type": "string"},
     "baud": {"type": "integer", "minimum": 50},
     "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
