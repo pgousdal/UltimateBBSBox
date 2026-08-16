@@ -25,6 +25,7 @@ class ServiceSummary:
     backup: dict[str, Any] | None = None
     host_health: str = "UNKNOWN"
     attention: bool = False
+    maintenance_jobs: tuple[str, ...] = ()
     def to_dict(self): return asdict(self)
 
 @dataclass(frozen=True)

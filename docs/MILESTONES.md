@@ -110,6 +110,13 @@ The product-neutral staged backup manager, manifest verification, restore-plan
 hooks, Tier-1 living-state declarations, and trusted dashboard delegation are
 implemented. Full end-to-end admin action verification remains M8.3d.
 
+### M8.3d — End-to-end admin action verification — INCOMPLETE
+
+A loopback HTTP fixture verifies login, role-specific controls, CSRF rejection,
+delegated operational actions, and audit privacy. The complete action matrix,
+promotion/rollback, and production deployment smoke checks remain to be
+expanded before M8.3 can be marked complete.
+
 ### M8.4 — Alerts/remote hosts/monitoring hardening
 
 Future work; not implemented.

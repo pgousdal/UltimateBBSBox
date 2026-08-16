@@ -77,10 +77,11 @@ class Observatory:
                 for rel in getattr(trusted, "releases", {}).values():
                     releases.append({"key":rel.key,"version":rel.version,"artifact_id":rel.artifact_id,"sha256":rel.sha256})
             except Exception: pass
+            jobs=tuple(j.get("name") for j in service.document.get("maintenance",{}).get("jobs",[]) if isinstance(j,dict) and j.get("name"))
             result.append(ServiceSummary(service.id,service.title,service.type,integration_id,integ.get("runtime"),endpoint,
                 lifecycle.get("mode"),integ.get("recommended_lifecycle"),state,int(instance.get("active_session_count",0)),maintenance,
                 readiness,release,integ.get("profile") or integ.get("default_profile"),artifact,deployment,
-                tuple(releases), backup, "UNKNOWN" if endpoint.get("location")=="remote" else "LOCAL", False))
+                tuple(releases), backup, "UNKNOWN" if endpoint.get("location")=="remote" else "LOCAL", False, jobs))
         return tuple(sorted(result,key=lambda x:x.id))
 
     def sessions(self):

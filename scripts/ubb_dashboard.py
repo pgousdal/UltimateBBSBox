@@ -10,7 +10,7 @@ from ubb_observatory import Observatory
 from ubb_admin import AuthStore, SessionStore, AuditLog, AdminActionService
 from ubb_integrations.registry import IntegrationRegistry
 from ubb_supervisor import Supervisor
-from ubb_backup import BackupManager
+from ubb_backup import BackupManager, BackupError
 
 CSS="""body{font:15px system-ui,sans-serif;background:#10141b;color:#e9edf2;margin:0}main{max-width:1200px;margin:auto;padding:1.5rem}nav a{color:#9bd1ff;margin-right:1rem}.cards{display:flex;gap:1rem;flex-wrap:wrap}.card,table{background:#19212c;border:1px solid #334255;border-radius:6px;padding:1rem}.card{min-width:8rem}table{width:100%;border-collapse:collapse;padding:0}th,td{text-align:left;padding:.55rem;border-bottom:1px solid #334255}th{color:#b9c7d8}.badge{padding:.15rem .4rem;border-radius:3px;border:1px solid #718096}.critical{color:#ff9c9c}.warning{color:#ffd27d}.info{color:#9bd1ff}.muted{color:#a8b3c2}a{color:#9bd1ff}a:focus,button:focus{outline:2px solid #fff}code{font-family:monospace}h1,h2{margin-top:1.2rem}ul{padding-left:1.2rem}"""
 
@@ -81,13 +81,15 @@ class DashboardApp:
         if role in ('operator','administrator'):
             for action,label in (('start','Start'),('stop','Stop'),('restart','Restart'),('backup','Backup'),('qualify','Qualify')):
                 forms.append(f"<form method='post' action='/api/v1/admin/services/{sid}/{action}'><input type='hidden' name='csrf' value='{csrf}'><button>{label}</button></form>")
-            if item.get('available_releases'):
+            if item.get('maintenance_jobs'):
                 forms.append(f"<form method='post' action='/api/v1/admin/services/{sid}/maintenance'><input type='hidden' name='csrf' value='{csrf}'><input name='job_id' placeholder='registered job'><button>Run maintenance</button></form>")
         if role=='administrator':
             for mode in ('always_on','on_demand'):
                 forms.append(f"<form method='post' action='/api/v1/admin/services/{sid}/lifecycle'><input type='hidden' name='csrf' value='{csrf}'><input type='hidden' name='mode' value='{mode}'><button>Set {mode}</button></form>")
-            if item.get('integration')=='amiexpress-amiga':
+            deployment=item.get('deployment') or {}
+            if item.get('integration')=='amiexpress-amiga' and deployment.get('candidates'):
                 forms.append(f"<form method='post' action='/api/v1/admin/integrations/amiexpress/promote'><input type='hidden' name='csrf' value='{csrf}'><input name='release' placeholder='candidate release'><button>Promote candidate</button></form>")
+            if item.get('integration')=='amiexpress-amiga' and deployment.get('previous'):
                 forms.append(f"<form method='post' action='/api/v1/admin/integrations/amiexpress/rollback'><input type='hidden' name='csrf' value='{csrf}'><button>Rollback</button></form>")
         return "<h2>Admin actions</h2><div class='cards'>"+''.join(forms)+"</div>"
     def _service_table(self,items):
@@ -132,7 +134,10 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith('/api/v1/admin/'):
             body=parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()) if self.headers.get('Content-Length') else {}
             supplied=self.headers.get('X-CSRF-Token') or body.get('csrf',[''])[0]
-            if not supplied or not secrets.compare_digest(supplied,session['csrf']): self._send(403,'CSRF rejected'); return
+            if not supplied or not secrets.compare_digest(supplied,session['csrf']):
+                parts=[x for x in path.split('/') if x]; action=parts[-1] if parts else 'unknown'; target=parts[-2] if len(parts)>4 else 'admin'
+                if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,'denied',remote=self.client_address[0],message='csrf rejected')
+                self._send(403,'CSRF rejected'); return
             self._action(path,session,body); return
         self.send_error(405)
     def do_PUT(self): self.send_error(405)
@@ -170,9 +175,10 @@ class Handler(BaseHTTPRequestHandler):
             result='success'; message='action delegated'; self._send(200,json.dumps({'result':result,'value':_jsonable(value)},sort_keys=True),'application/json; charset=utf-8')
         except PermissionError as exc: result='denied'; message=str(exc); self._send(403,json.dumps({'error':message}),'application/json; charset=utf-8')
         except ValueError as exc: message=str(exc); self._send(422,json.dumps({'error':message}),'application/json; charset=utf-8')
+        except (NotImplementedError, BackupError) as exc: message=str(exc); self._send(409,json.dumps({'error':message or 'action unavailable'}),'application/json; charset=utf-8')
         except Exception as exc: message=str(exc); self._send(500,json.dumps({'error':'action failed'}),'application/json; charset=utf-8')
         finally:
-            if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,result,message,remote=self.client_address[0])
+            if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,result,source='web',message=message,remote=self.client_address[0])
 
 def main(argv=None):
     p=argparse.ArgumentParser(description="Read-only Ultimate BBS Box dashboard")
