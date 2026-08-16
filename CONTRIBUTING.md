@@ -23,3 +23,7 @@ unavailable, `make check` reports `PASS WITH SKIPS`; do not conceal the skip.
 Add focused deterministic tests and update milestone/acceptance documentation
 when behavior or scope changes. Prefer small incremental commits, do not rewrite
 history, and do not push without explicit authorization.
+
+The repository-owned source and documentation are MIT-licensed. Third-party
+products, tools, ROMs, preserved artifacts, and their rights metadata remain
+separate and are not relicensed by contributions here.

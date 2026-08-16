@@ -36,3 +36,11 @@ M8.3b completes registered maintenance, backup, qualification, and AmiExpress
 promotion/rollback routes. Operators use the same delegated action service as
 the web/API layer; administrators alone may change lifecycle policy or release
 pointers. Dashboard forms are role-filtered and every attempt is audited.
+# Login throttling
+
+The admin dashboard uses bounded in-memory `LoginThrottle` state keyed by
+username and socket peer. Backoff begins at the fourth failure (5 seconds),
+increases with a 60-second cap, expires after cooldown, and resets on success.
+Requests are rejected immediately; no handler sleeps. Unknown users follow a
+dummy PBKDF2 verification path, and arbitrary forwarding headers are ignored.
+State resets on process restart. Throttled requests return HTTP 429.

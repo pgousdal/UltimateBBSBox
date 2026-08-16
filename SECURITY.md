@@ -23,3 +23,17 @@ public deployment safety.
 The repository currently has no explicit project license. Do not assume that
 third-party BBS software, ROMs, AmigaOS media, or preserved artifacts are
 redistributable.
+
+Repository-owned UBB source and documentation are MIT-licensed. That license
+does not extend to third-party software or preserved artifacts.
+
+## Admin login protection
+
+Admin login failures are throttled independently by username and socket-peer
+source. Failures 1–3 have no delay; failure 4 applies a 5-second reject-until
+delay, then delays increase and cap at 60 seconds. Throttling rejects
+immediately rather than sleeping, expires with cooldown, resets on successful
+login, and is bounded to a finite in-memory table. Process restart resets the
+table. Unknown users use the same PBKDF2 verification path and receive the same
+external invalid-login response. Untrusted forwarding headers are ignored.
+Throttled web requests return 429 with bounded `Retry-After`.

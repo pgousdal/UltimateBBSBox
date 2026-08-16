@@ -8,6 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
 from ubb_registry.loader import load_registry
 from ubb_observatory import Observatory
 from ubb_admin import AuthStore, SessionStore, AuditLog, AdminActionService
+from ubb_admin.auth import LoginThrottle
 from ubb_integrations.registry import IntegrationRegistry
 from ubb_supervisor import Supervisor
 from ubb_backup import BackupManager, BackupError
@@ -23,17 +24,20 @@ def _jsonable(value):
     return value
 
 class DashboardApp:
-    def __init__(self, observatory, auth_store=None, sessions=None, audit=None, actions=None, require_auth=False, monitoring=None):
-        self.observatory=observatory; self.auth=auth_store; self.sessions=sessions or SessionStore(); self.audit=audit; self.actions=actions; self.require_auth=require_auth; self.monitoring=monitoring; self.failed={}
+    def __init__(self, observatory, auth_store=None, sessions=None, audit=None, actions=None, require_auth=False, monitoring=None, throttle=None, clock=time.time):
+        self.observatory=observatory; self.auth=auth_store; self.sessions=sessions or SessionStore(); self.audit=audit; self.actions=actions; self.require_auth=require_auth; self.monitoring=monitoring; self.throttle=throttle or LoginThrottle(clock=clock)
     def authenticate(self,token): return self.sessions.get(token) if token else None
     def snapshot(self): return self.observatory.snapshot()
     def login(self,user,password,remote=''):
-        key=(remote,user); now=time.time(); blocked=self.failed.get(key,0)
-        if blocked>now: return None
+        source = remote or "unknown"
+        if self.throttle.retry_after(user, source):
+            return None
         record=self.auth.authenticate(user,password) if self.auth else None
         if not record:
-            self.failed[key]=now+min(300,2**min(8,int(self.failed.get(key,now)-now+1))); return None
-        self.failed.pop(key,None); return self.sessions.create(user,record['role'])
+            self.throttle.failure(user, source)
+            return None
+        self.throttle.success(user, source)
+        return self.sessions.create(user,record['role'])
     def api(self,path,query=None):
         snap=self.snapshot(); data=snap.to_dict(); parts=[x for x in path.split("/") if x]
         if parts==["api","v1","status"]:
@@ -140,7 +144,12 @@ class Handler(BaseHTTPRequestHandler):
         if not self.app.require_auth:
             self.send_error(405); return
         if path=='/admin/login':
-            form=parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()); user=form.get('username',[''])[0]; password=form.get('password',[''])[0]; token=self.app.login(user,password,self.client_address[0])
+            form=parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()); user=form.get('username',[''])[0]; password=form.get('password',[''])[0]; source=self.client_address[0]
+            retry_after=self.app.throttle.retry_after(user,source)
+            if retry_after:
+                if self.app.audit:self.app.audit.append(user,'unknown','login','admin','denied',remote=source,message='login throttled')
+                self._send(429,'<h1>Login temporarily throttled</h1>',headers={'Retry-After':str(retry_after)}); return
+            token=self.app.login(user,password,source)
             if not token:
                 if self.app.audit:self.app.audit.append(user,'unknown','login','admin','denied',remote=self.client_address[0],message='invalid credentials')
                 self._send(401,'<h1>Login failed</h1>'); return

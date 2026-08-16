@@ -223,6 +223,14 @@ readiness/qualification matrix, dependency/listener checks, deny-by-default
 firewall intent, and secret/TLS/queue diagnostics. See
 [docs/NETWORK-HARDENING.md](docs/NETWORK-HARDENING.md).
 
+## License
+
+UltimateBBSBox repository-owned source and documentation are released under the
+MIT License (see [LICENSE](LICENSE)). Third-party software, BBS products,
+ROMs, AmigaOS media, and preserved M1 artifacts retain their own licenses and
+rights. Preservation or local installation never implies redistribution rights;
+M1 rights metadata remains authoritative.
+
 M6.4 adds a conservative private-first NNTP/news model with bounded retention,
 generic BBS mappings, and optional explicit public modes. See
 [`docs/NEWS.md`](docs/NEWS.md); no public Usenet peering occurs in tests.
