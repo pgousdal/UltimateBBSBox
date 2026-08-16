@@ -1,0 +1,17 @@
+[Unit]
+Description=Ultimate BBS Box lifecycle reconciliation tick
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=ubb-supervisor
+Group=ubb-supervisor
+WorkingDirectory=/opt/ultimate-bbs-box
+ExecStart=/usr/bin/python3 /opt/ultimate-bbs-box/scripts/ubb-supervisor.py tick
+StateDirectory=ultimate-bbs-box/supervisor
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ultimate-bbs-box/supervisor

@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M2 adds the service and endpoint registry.** The existing Mystic-on-metal Ansible integration and M1 preservation archive are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
+**M3 adds the generic lifecycle supervisor.** The existing Mystic-on-metal Ansible integration, preservation archive, and service registry are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -44,6 +44,19 @@ python3 scripts/ubb-registry.py --json resolve unix-v7-shell
 
 See [docs/REGISTRY.md](docs/REGISTRY.md) for the model and full command set.
 
+## Lifecycle supervisor
+
+The M3 supervisor turns lifecycle declarations into explicit, persisted state transitions. It tracks independent always-on, administrative, maintenance, recovery, and session holds; enforces readiness, bounded restart, sharing, and idle rules; and runs interval or daily maintenance orchestration through an injected generic driver.
+
+```bash
+python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state status
+python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state reconcile
+python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state tick
+python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state --json status mystic-main
+```
+
+The bundled production driver only supports generic `local_process` endpoints. Existing TCP/remote services remain managed by their current deployment until future runtime adapters exist; the supervisor fails closed rather than pretending it can control them. See [docs/SUPERVISOR.md](docs/SUPERVISOR.md).
+
 ## Contracts
 
 ```
@@ -57,6 +70,7 @@ catalog/{services,endpoints,integrations}/  production registry source
 scripts/ubb-schema.py         manifest validator
 scripts/ubb-archive.py        preservation archive CLI
 scripts/ubb-registry.py       registry inspection CLI
+scripts/ubb-supervisor.py     lifecycle supervisor CLI
 ```
 
 Validate everything with:

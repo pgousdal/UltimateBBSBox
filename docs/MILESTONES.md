@@ -25,9 +25,11 @@ Persist and query service/endpoint manifests. Resolve local, serial, TCP, SSH, a
 
 Acceptance is implemented by production catalog directories, a shared M0 schema validator, a deterministic in-memory registry API, generic reference resolution, exposure/type/runtime filters, CLI text/JSON inspection, representative local and remote manifests, and offline tests. M2 is metadata only; it performs no lifecycle action, network connection, routing, or installer execution.
 
-## M3 — Lifecycle supervisor
+## M3 — Lifecycle supervisor — COMPLETE
 
 Implement `on_demand`, `always_on`, readiness, idle shutdown, multiuser sharing, crash restart, and scheduled wake/maintenance.
+
+Acceptance is implemented by the explicit state machine, counted holds, generic driver protocol, fake and local-process drivers, bounded recovery, injected clock, interval/daily scheduler, atomic state and JSONL journal, reconciliation, CLI, systemd one-shot/timer examples, and deterministic concurrency tests. Terminal routing, menus, runtime-specific adapters, remote RPC, and network services remain later milestones.
 
 ## M4 — Session router and exposure policy
 

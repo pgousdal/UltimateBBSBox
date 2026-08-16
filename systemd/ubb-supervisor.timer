@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Ultimate BBS Box lifecycle reconciliation
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=30s
+AccuracySec=1s
+Persistent=true
+Unit=ubb-supervisor.service
+
+[Install]
+WantedBy=timers.target

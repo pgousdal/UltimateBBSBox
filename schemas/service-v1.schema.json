@@ -63,6 +63,21 @@
         "idle_timeout_seconds": {"type": "integer", "minimum": 0},
         "startup_timeout_seconds": {"type": "integer", "minimum": 1},
         "restart": {"enum": ["never", "on_failure", "always"]},
+        "max_restarts": {"type": "integer", "minimum": 0},
+        "restart_window_seconds": {"type": "integer", "minimum": 1},
+        "restart_backoff_seconds": {"type": "number", "minimum": 0},
+        "readiness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {"enum": ["immediate", "process_alive", "command_probe", "driver_specific"]},
+            "command": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+          },
+          "allOf": [
+            {"if": {"properties": {"type": {"const": "command_probe"}}}, "then": {"required": ["command"]}}
+          ]
+        },
         "shutdown_policy": {"enum": ["when_idle", "manual", "if_started_for_maintenance"]}
       }
     },
@@ -80,6 +95,7 @@
               "name": {"type": "string"},
               "schedule": {"type": "string"},
               "action": {"type": "string"},
+              "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
               "wake_if_stopped": {"type": "boolean", "default": true},
               "shutdown_after": {"type": "boolean", "default": true},
               "timeout_seconds": {"type": "integer", "minimum": 1}

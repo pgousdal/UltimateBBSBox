@@ -43,6 +43,14 @@ Every runnable service can select independently:
 
 Scheduled maintenance is orthogonal to availability. An on-demand BBS may wake at 03:00, import/export network traffic, then return to sleep. An always-on BBS runs the same maintenance job without being stopped afterward.
 
+### M3 supervisor boundary
+
+M3 represents each catalog service with one shared runtime instance and an explicit `stopped → starting → ready → running/maintenance → stopping` state graph plus `failed` recovery. Per-service locks serialize state changes. Counted holds for always-on policy, administration, sessions, maintenance, and recovery prevent one activity from stopping a runtime still needed by another. Readiness remains separate from process existence, and restart attempts are bounded within a configured window.
+
+Runtime state is stored separately from catalog YAML under `/var/lib/ultimate-bbs-box/supervisor/` by default. Atomic instance files support reconciliation, and an append-only JSONL journal records transitions. Caller streams are never stored. A dependency-injected driver contract isolates lifecycle orchestration from runtimes; M3 bundles only a deterministic fake and a generic local-process implementation, not emulator or remote-supervisor adapters.
+
+M3 scheduling is a single-writer, one-shot `tick` model suitable for a systemd timer. It calculates fixed intervals and daily local wall-clock times, wakes on-demand instances for driver-defined jobs, and releases only the maintenance hold afterward. M3 does not route sessions, build menus, enforce exposure, authenticate callers, or implement maintenance actions such as FTN exchange.
+
 ## Remote services
 
 A service endpoint may be on another machine. This is first-class, not a workaround. A front-end UBB instance may route a caller to a remote supervisor hosting SIMH, QEMU, UNIX Time Machine, VAX/VMS, MUDs, or other services.
