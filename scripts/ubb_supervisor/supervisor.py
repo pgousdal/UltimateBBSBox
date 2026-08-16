@@ -40,6 +40,14 @@ class Supervisor:
         self._locks = {service_id: threading.RLock() for service_id in registry.services}
         self._jobs_running: set[tuple[str, str]] = set()
         self.instances: dict[str, InstanceState] = {}
+        self.lifecycle_overrides = {}
+        override_path = pathlib.Path(state_dir) / "lifecycle-overrides.json"
+        try:
+            import json
+            self.lifecycle_overrides = json.loads(override_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, ValueError, OSError):
+            self.lifecycle_overrides = {}
+        self._lifecycle_override_path = override_path
         for service_id in registry.services:
             loaded = self.store.load(service_id)
             self.instances[service_id] = loaded or InstanceState(service_id, f"{service_id}:shared")
@@ -53,6 +61,22 @@ class Supervisor:
 
     def _declaration(self, service):
         return self.registry.resolve(service.id)
+
+    def set_lifecycle_mode(self, service_id, mode):
+        self._service(service_id)
+        if mode not in ("always_on", "on_demand"):
+            raise ValueError("invalid lifecycle mode")
+        self.lifecycle_overrides[service_id] = mode
+        import json
+        self._lifecycle_override_path.parent.mkdir(parents=True, exist_ok=True)
+        self._lifecycle_override_path.write_text(json.dumps(self.lifecycle_overrides, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        return {"service_id": service_id, "mode": mode, "recommended": self.registry.resolve(service_id).get("integration", {}).get("recommended_lifecycle")}
+
+    def _lifecycle(self, service):
+        value = dict(service.document["lifecycle"])
+        if service.id in self.lifecycle_overrides:
+            value["mode"] = self.lifecycle_overrides[service.id]
+        return value
 
     def _driver(self, service):
         return self.driver_resolver(service)
@@ -121,8 +145,9 @@ class Supervisor:
         self._transition(instance, LifecycleState.STARTING, reason)
         try:
             driver.start(instance, declaration)
-            timeout = float(service.document["lifecycle"].get("startup_timeout_seconds", 60))
-            readiness = service.document["lifecycle"].get("readiness", {"type": "process_alive"})
+            lifecycle = self._lifecycle(service)
+            timeout = float(lifecycle.get("startup_timeout_seconds", 60))
+            readiness = lifecycle.get("readiness", {"type": "process_alive"})
             deadline = self.clock.monotonic() + timeout
             while not driver.is_ready(instance, declaration, readiness):
                 if self.clock.monotonic() >= deadline:
@@ -185,7 +210,7 @@ class Supervisor:
         service = self._service(service_id)
         with self._locks[service.id]:
             instance = self.instances[service.id]
-            if service.document["lifecycle"]["sharing"] == "single_session" and instance.sessions:
+            if self._lifecycle(service)["sharing"] == "single_session" and instance.sessions:
                 raise ServiceBusyError(f"single_session service {service.id} already has an active session")
             session_id = uuid.uuid4().hex
             instance.sessions[session_id] = self._timestamp()
@@ -208,7 +233,7 @@ class Supervisor:
             return instance.to_dict()
 
     def _schedule_idle_locked(self, service, instance):
-        lifecycle = service.document["lifecycle"]
+        lifecycle = self._lifecycle(service)
         if lifecycle["mode"] != "on_demand" or instance.active_holds() or instance.state != LifecycleState.RUNNING:
             return
         if instance.idle_deadline:
@@ -232,7 +257,7 @@ class Supervisor:
             return instance.to_dict()
 
     def _restart_after_failure_locked(self, service, instance):
-        lifecycle = service.document["lifecycle"]
+        lifecycle = self._lifecycle(service)
         if lifecycle.get("restart", "never") not in ("on_failure", "always"):
             return
         now = self.clock.now()
@@ -336,7 +361,7 @@ class Supervisor:
         return self.list_status()
 
     def _reconcile_locked(self, service, instance):
-        lifecycle = service.document["lifecycle"]
+        lifecycle = self._lifecycle(service)
         if lifecycle["mode"] == "always_on":
             instance.holds["always_on"] = 1
         else:

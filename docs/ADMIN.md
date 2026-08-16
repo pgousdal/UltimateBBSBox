@@ -51,3 +51,6 @@ hardening. Optional Prometheus export remains future work.
 
 The M8.2 dashboard is documented in [DASHBOARD.md](DASHBOARD.md). It is a
 presentation layer over this exact model, not a replacement for the CLI.
+
+M8.3 authentication, roles, CSRF, action delegation, and audit boundaries are
+described in [ADMIN-SECURITY.md](ADMIN-SECURITY.md).

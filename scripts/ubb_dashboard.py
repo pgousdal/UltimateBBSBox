@@ -1,11 +1,13 @@
 """Small read-only HTTP presentation layer for the M8.1 observatory."""
 from __future__ import annotations
 import argparse, html, json, pathlib, sys
+import secrets, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
 from ubb_registry.loader import load_registry
 from ubb_observatory import Observatory
+from ubb_admin import AuthStore, SessionStore, AuditLog, AdminActionService
 
 CSS="""body{font:15px system-ui,sans-serif;background:#10141b;color:#e9edf2;margin:0}main{max-width:1200px;margin:auto;padding:1.5rem}nav a{color:#9bd1ff;margin-right:1rem}.cards{display:flex;gap:1rem;flex-wrap:wrap}.card,table{background:#19212c;border:1px solid #334255;border-radius:6px;padding:1rem}.card{min-width:8rem}table{width:100%;border-collapse:collapse;padding:0}th,td{text-align:left;padding:.55rem;border-bottom:1px solid #334255}th{color:#b9c7d8}.badge{padding:.15rem .4rem;border-radius:3px;border:1px solid #718096}.critical{color:#ff9c9c}.warning{color:#ffd27d}.info{color:#9bd1ff}.muted{color:#a8b3c2}a{color:#9bd1ff}a:focus,button:focus{outline:2px solid #fff}code{font-family:monospace}h1,h2{margin-top:1.2rem}ul{padding-left:1.2rem}"""
 
@@ -17,8 +19,17 @@ def _jsonable(value):
     return value
 
 class DashboardApp:
-    def __init__(self, observatory): self.observatory=observatory
+    def __init__(self, observatory, auth_store=None, sessions=None, audit=None, actions=None, require_auth=False):
+        self.observatory=observatory; self.auth=auth_store; self.sessions=sessions or SessionStore(); self.audit=audit; self.actions=actions; self.require_auth=require_auth; self.failed={}
+    def authenticate(self,token): return self.sessions.get(token) if token else None
     def snapshot(self): return self.observatory.snapshot()
+    def login(self,user,password,remote=''):
+        key=(remote,user); now=time.time(); blocked=self.failed.get(key,0)
+        if blocked>now: return None
+        record=self.auth.authenticate(user,password) if self.auth else None
+        if not record:
+            self.failed[key]=now+min(300,2**min(8,int(self.failed.get(key,now)-now+1))); return None
+        self.failed.pop(key,None); return self.sessions.create(user,record['role'])
     def api(self,path):
         snap=self.snapshot(); data=snap.to_dict(); parts=[x for x in path.split("/") if x]
         if parts==["api","v1","status"]:
@@ -46,7 +57,7 @@ class DashboardApp:
             item=next((x for x in data["services"] if x["id"]==parts[1]),None)
             if item is None:return None
             body=f"<h1>{html.escape(item['title'])}</h1><p><code>{html.escape(item['id'])}</code></p>"+self._definition(item)
-        elif parts and parts[0] in ("services","sessions","activity","alerts","readiness","artifacts","backups","hosts"):
+        elif parts and parts[0] in ("services","sessions","activity","alerts","readiness","artifacts","backups","hosts","audit"):
             key=parts[0]; body=f"<h1>{html.escape(key.title())}</h1>"
             if key=="services": body+=self._service_table(data["services"])
             elif key=="alerts": body+="<ul>"+"".join(f"<li class='{html.escape(x['severity'])}'><strong>{html.escape(x['severity'])}</strong> {html.escape(x['message'])} ({html.escape(x.get('service_id') or '')})</li>" for x in data['alerts'])+"</ul>"
@@ -55,10 +66,11 @@ class DashboardApp:
                 elif key=="readiness": value=[{"service_id":x["id"],"release":x["release"],"readiness":x["readiness"]} for x in data["services"]]
                 elif key=="artifacts": value=[{"service_id":x["id"],"artifact":x["artifact"]} for x in data["services"] if x["artifact"]]
                 elif key=="backups": value=[{"service_id":x["id"],"backup":x["backup"]} for x in data["services"]]
+                elif key=="audit": value=self.audit.read() if self.audit else []
                 else: value=data.get(key,[])
                 body+="<pre>"+html.escape(json.dumps(value,indent=2,sort_keys=True)) + "</pre>"
         else:return None
-        nav="<nav><a href='/'>Overview</a><a href='/services'>Services</a><a href='/sessions'>Sessions</a><a href='/activity'>Activity</a><a href='/alerts'>Alerts</a><a href='/readiness'>Readiness</a><a href='/artifacts'>Artifacts</a><a href='/backups'>Backups</a><a href='/hosts'>Hosts</a></nav>"
+        nav="<nav><a href='/'>Overview</a><a href='/services'>Services</a><a href='/sessions'>Sessions</a><a href='/activity'>Activity</a><a href='/alerts'>Alerts</a><a href='/readiness'>Readiness</a><a href='/artifacts'>Artifacts</a><a href='/backups'>Backups</a><a href='/hosts'>Hosts</a><a href='/audit'>Audit</a></nav>"
         return "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width'><title>"+html.escape(title)+"</title><style>"+CSS+"</style></head><body><main>"+nav+body+"</main></body></html>"
     def _service_table(self,items):
         rows="".join(f"<tr><td><a href='/service/{html.escape(x['id'])}'>{html.escape(x['title'])}</a></td><td>{html.escape(x['type'])}</td><td>{html.escape(str(x['release'] or 'UNKNOWN'))}</td><td>{html.escape(str(x['policy'] or 'UNKNOWN'))}</td><td><span class='badge'>{html.escape(x['state'])}</span></td><td>{x['active_sessions']}</td><td>{html.escape(x['readiness'])}</td><td>{html.escape(x['host_health'])}</td></tr>" for x in items)
@@ -72,6 +84,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path=urlparse(self.path).path
         try:
+            if path=='/admin/login': self._login_page(); return
+            token=self._cookie('ubb_admin');
+            if self.app.require_auth and not self.app.authenticate(token): self._unauthorized(); return
+            if path=='/admin/logout': self._logout(token); return
+            if path=='/api/v1/audit': self._audit(); return
             if path.startswith("/api/"):
                 value=self.app.api(path)
                 if value is None:self.send_error(404); return
@@ -81,13 +98,58 @@ class Handler(BaseHTTPRequestHandler):
             if page is None:self.send_error(404); return
             payload=page.encode(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8"); self.send_header("Content-Security-Policy","default-src 'self'; style-src 'unsafe-inline'"); self.send_header("X-Content-Type-Options","nosniff"); self.send_header("Content-Length",str(len(payload))); self.end_headers(); self.wfile.write(payload)
         except Exception: self.send_error(503,"observatory temporarily unavailable")
-    def do_POST(self): self.send_error(405)
+    def do_POST(self):
+        path=urlparse(self.path).path
+        if not self.app.require_auth:
+            self.send_error(405); return
+        if path=='/admin/login':
+            form=parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()); user=form.get('username',[''])[0]; password=form.get('password',[''])[0]; token=self.app.login(user,password,self.client_address[0])
+            if not token:
+                if self.app.audit:self.app.audit.append(user,'unknown','login','admin','denied',remote=self.client_address[0],message='invalid credentials')
+                self._send(401,'<h1>Login failed</h1>'); return
+            if self.app.audit:self.app.audit.append(user,'unknown','login','admin','success',remote=self.client_address[0])
+            self._send(303,'',headers={'Location':'/','Set-Cookie':f'ubb_admin={token}; HttpOnly; SameSite=Strict; Path=/' }); return
+        token=self._cookie('ubb_admin'); session=self.app.authenticate(token)
+        if not session:self._unauthorized(); return
+        if path.startswith('/api/v1/admin/'):
+            supplied=self.headers.get('X-CSRF-Token') or parse_qs(self.rfile.read(int(self.headers.get('Content-Length','0'))).decode()).get('csrf',[''])[0] if self.headers.get('Content-Length') else self.headers.get('X-CSRF-Token')
+            if not supplied or not secrets.compare_digest(supplied,session['csrf']): self._send(403,'CSRF rejected'); return
+            self._action(path,session); return
+        self.send_error(405)
     def do_PUT(self): self.send_error(405)
     def do_DELETE(self): self.send_error(405)
     def log_message(self,*args): pass
+    def _cookie(self,name):
+        for bit in self.headers.get('Cookie','').split(';'):
+            if bit.strip().startswith(name+'='): return bit.strip().split('=',1)[1]
+        return None
+    def _send(self,code,body,ctype='text/html; charset=utf-8',headers=None):
+        data=body.encode() if isinstance(body,str) else body; self.send_response(code); self.send_header('Content-Type',ctype); self.send_header('Cache-Control','no-store');
+        for k,v in (headers or {}).items(): self.send_header(k,v)
+        self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)
+    def _unauthorized(self): self._send(401,'<h1>Authentication required</h1>')
+    def _login_page(self): self._send(200,"<!doctype html><title>UBB admin login</title><h1>Admin login</h1><form method='post' action='/admin/login'><label>User <input name='username' autofocus></label><label>Password <input type='password' name='password'></label><button>Sign in</button></form>")
+    def _logout(self,token):
+        if token:self.app.sessions.remove(token)
+        self._send(303,'',headers={'Location':'/admin/login','Set-Cookie':'ubb_admin=; Max-Age=0; HttpOnly; SameSite=Strict'})
+    def _audit(self): self._send(200,json.dumps(self.app.audit.read() if self.app.audit else [],sort_keys=True).encode(),'application/json; charset=utf-8')
+    def _action(self,path,session):
+        parts=[x for x in path.split('/') if x]; action=parts[-1]; target=parts[-2] if len(parts)>4 else 'integration'; result='failure'; message=''
+        try:
+            if not self.app.actions: raise RuntimeError('action service unavailable')
+            if action=='start': value=self.app.actions.start(target,session['role'])
+            elif action=='stop': value=self.app.actions.stop(target,session['role'])
+            elif action=='restart': value=self.app.actions.restart(target,session['role'])
+            else: raise ValueError('unsupported action')
+            result='success'; message='action delegated'; self._send(200,json.dumps({'result':result,'value':_jsonable(value)},sort_keys=True),'application/json; charset=utf-8')
+        except PermissionError as exc: result='denied'; message=str(exc); self._send(403,json.dumps({'error':message}),'application/json; charset=utf-8')
+        except ValueError as exc: message=str(exc); self._send(422,json.dumps({'error':message}),'application/json; charset=utf-8')
+        except Exception as exc: message=str(exc); self._send(500,json.dumps({'error':'action failed'}),'application/json; charset=utf-8')
+        finally:
+            if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,result,message,remote=self.client_address[0])
 
 def main(argv=None):
     p=argparse.ArgumentParser(description="Read-only Ultimate BBS Box dashboard")
-    p.add_argument("--bind",default="127.0.0.1"); p.add_argument("--port",type=int,default=8088); p.add_argument("--catalog",default="catalog"); p.add_argument("--archive-root"); p.add_argument("--supervisor-state"); p.add_argument("--router-state"); p.add_argument("--install-root",action="append",default=[])
-    a=p.parse_args(argv); roots={x.split("=",1)[0]:x.split("=",1)[1] for x in a.install_root if "=" in x}; obs=Observatory(load_registry(a.catalog),archive_root=a.archive_root,supervisor_state=a.supervisor_state,router_state=a.router_state,install_roots=roots); Handler.app=DashboardApp(obs); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
+    p.add_argument("--bind",default="127.0.0.1"); p.add_argument("--port",type=int,default=8088); p.add_argument("--catalog",default="catalog"); p.add_argument("--archive-root"); p.add_argument("--supervisor-state"); p.add_argument("--router-state"); p.add_argument("--install-root",action="append",default=[]); p.add_argument("--auth-users",default="/etc/ultimate-bbs-box/admin-users.json"); p.add_argument("--audit-path",default="/var/log/ultimate-bbs-box/admin-audit.jsonl")
+    a=p.parse_args(argv); roots={x.split("=",1)[0]:x.split("=",1)[1] for x in a.install_root if "=" in x}; obs=Observatory(load_registry(a.catalog),archive_root=a.archive_root,supervisor_state=a.supervisor_state,router_state=a.router_state,install_roots=roots); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),require_auth=True); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
 if __name__=="__main__": main()

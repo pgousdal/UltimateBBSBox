@@ -98,9 +98,11 @@ overview/detail pages and versioned GET-only JSON endpoints. It binds to
 loopback by default and introduces no database, write actions, authentication,
 or frontend build stack.
 
-### M8.3 — Authenticated admin actions + audit
+### M8.3 — Authenticated admin actions + audit — COMPLETE
 
-Future work; not implemented.
+Authenticated operator sessions, role/CSRF checks, delegated operational action
+endpoints, and append-only audit records are implemented. Privilege-separated
+deployment and broader remote monitoring remain M8.4 hardening work.
 
 ### M8.4 — Alerts/remote hosts/monitoring hardening
 
