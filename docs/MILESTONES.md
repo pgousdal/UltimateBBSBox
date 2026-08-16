@@ -91,9 +91,12 @@ The product-neutral read-only observatory aggregates M1–M7 state, exposes
 deterministic service/session/activity/alert/readiness/artifact/backup views,
 and deliberately introduces no write actions or network server.
 
-### M8.2 — Read-only web dashboard
+### M8.2 — Read-only web dashboard — COMPLETE
 
-Future work; not implemented.
+The standard-library dashboard presents the M8.1 read model with server-rendered
+overview/detail pages and versioned GET-only JSON endpoints. It binds to
+loopback by default and introduces no database, write actions, authentication,
+or frontend build stack.
 
 ### M8.3 — Authenticated admin actions + audit
 

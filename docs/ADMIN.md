@@ -48,3 +48,6 @@ admin authentication.
 M8.2 may serialize this same model to a read-only web view. M8.3 owns
 authenticated actions and audit; M8.4 owns remote hosts and monitoring
 hardening. Optional Prometheus export remains future work.
+
+The M8.2 dashboard is documented in [DASHBOARD.md](DASHBOARD.md). It is a
+presentation layer over this exact model, not a replacement for the CLI.

@@ -177,3 +177,8 @@ status` provides a concise overview; `--json services`, `activity`, `alerts`,
 `readiness`, `artifacts`, and `backups` expose the same deterministic read
 model for operators and future dashboards. It performs no lifecycle, backup,
 promotion, or network-admin actions.
+
+M8.2 adds the dependency-free read-only web view:
+`python3 scripts/ubb-dashboard.py --bind 127.0.0.1 --port 8088`. It uses the
+same observatory model and versioned GET-only `/api/v1/` endpoints, with no
+database, write actions, authentication system, or public bind by default.
