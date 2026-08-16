@@ -15,8 +15,9 @@ class IntegrationRegistry:
     @classmethod
     def defaults(cls):
         from integrations.bbs.abbs.integration import ABBSAmigaIntegration
+        from integrations.bbs.amiexpress.integration import AmiExpressAmigaIntegration
         from integrations.bbs.mystic.integration import MysticLinuxIntegration
-        return cls((ABBSAmigaIntegration(), MysticLinuxIntegration()))
+        return cls((ABBSAmigaIntegration(), AmiExpressAmigaIntegration(), MysticLinuxIntegration()))
 
     def get(self, integration_id):
         try:

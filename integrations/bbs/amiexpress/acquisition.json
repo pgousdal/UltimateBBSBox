@@ -1,0 +1,37 @@
+{
+  "artifact_id": "amiexpress-amiga-5.6.1-original",
+  "product": "AmiExpress BBS system redeveloped in E",
+  "version": "5.6.1",
+  "original_filename": "Amix561.lha",
+  "platform": "m68k-amigaos",
+  "source": {
+    "url": "https://aminet.net/comm/amiex/Amix561.lha",
+    "archive_name": "Aminet comm/amiex",
+    "listing": "https://aminet.net/comm/amiex",
+    "project_source": "https://github.com/dmcoles/AmiExpress",
+    "project_wiki": "https://github.com/dmcoles/AmiExpress/wiki"
+  },
+  "reference_acquisition": {
+    "acquired_at": "2026-08-16T11:02:17.759792Z",
+    "size": 1161960,
+    "sha256": "f49d051222a4a951597d241469dab24adb198c6849cdb111734fdd8c03571f4d",
+    "sha1": "ee7986a0d89e15e63c066263fb49884af3f0791d",
+    "md5": "f4a8d5794bfebaeb359d85d78fca3ae6",
+    "verified_through_m1": true,
+    "binary_committed": false
+  },
+  "rights": {
+    "status": "preservation_only",
+    "preserve_locally": true,
+    "install_locally": true,
+    "redistribute_original": false,
+    "publish_to_bbs_filebase": false,
+    "export_from_archive": true,
+    "evidence": "The package read_me identifies Darren Coles's rewrite and supplies MIT terms for that software, while also identifying an Escom AG licensed Installer and LightSpeed/Commodore historical documentation. The mixed archive is not treated as redistributable as a whole."
+  },
+  "requirements": {
+    "documented": "Workbench installed, Kickstart 2.0 or later for historical AmiExpress documentation, hard disk recommended, 2 MB free upload space; the M7.3 canonical profile uses licensed-private Kickstart 3.1/AmigaOS 3.1 for the maintained release.",
+    "supported_profiles": ["amiga-a1200-os31"],
+    "default_profile": "amiga-a1200-os31"
+  }
+}

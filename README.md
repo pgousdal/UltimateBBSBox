@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M7.2 adds the preservation-first ABBS/Amiga reference integration.** M0–M5 and M7.1 remain intact, M6 remains the reserved network/core-services milestone, and museum integrations are added and qualified one at a time.
+**M7.3 adds the preservation-first AmiExpress/Amiga reference integration.** M0–M5, M7.1 and M7.2 remain intact, M6 remains the reserved network/core-services milestone, and museum integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -60,6 +60,8 @@ M5 supplies the default adapter-backed runtime driver. Services without runnable
 M7.1 gives Mystic a production `native` runtime configuration and a preservation-first install workflow. A clean install can no longer fetch Mystic directly from Ansible. See [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) and [integrations/bbs/mystic/README.md](integrations/bbs/mystic/README.md).
 
 M7.2 applies that contract to ABBS for All 3.2. It preserves the authentic LHA before deriving an install tree, requires operator-supplied licensed Kickstart/AmigaOS assets, separates golden and mutable HDFs, and routes a raw FS-UAE serial bridge through M3/M4. See [integrations/bbs/abbs/README.md](integrations/bbs/abbs/README.md) and [docs/AMIGA-INTEGRATIONS.md](docs/AMIGA-INTEGRATIONS.md).
+
+M7.3 adds AmiExpress 5.6.1 from Aminet and canonical `amiga-a500-k13`/`amiga-a1200-os31` profiles. AmiExpress uses only the evidence-supported A1200/OS3.1 profile and the same generic Amiga helpers as ABBS. See [integrations/bbs/amiexpress/README.md](integrations/bbs/amiexpress/README.md) and [docs/AMIGA-PROFILES.md](docs/AMIGA-PROFILES.md).
 
 ```bash
 python3 scripts/ubb-integration.py list

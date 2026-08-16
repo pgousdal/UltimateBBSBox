@@ -108,4 +108,4 @@ Configuration is trusted administrator/repository data but rejects unknown field
 
 ## Explicitly deferred
 
-M5 does not contain product behavior. M7.1 supplies Mystic's native metadata and M7.2 supplies ABBS FS-UAE metadata outside runtime core. FS-UAE's configured raw TCP serial listener is handled by the existing generic TCP readiness/stream contracts; no ABBS branch was added. AmiExpress, NiKom, C-Net, DOS setup, MAME/Hatari integration, physical serial hardware, remote-supervisor RPC, FTN/NNTP/SMTP/IRC, and BBS filebase publication remain outside M5.
+M5 does not contain product behavior. M7.1 supplies Mystic's native metadata and M7.2/M7.3 supply ABBS/AmiExpress FS-UAE metadata outside runtime core. FS-UAE's configured raw TCP serial listener is handled by the existing generic TCP readiness/stream contracts; no product branch was added. NiKom, C-Net, DOS setup, MAME/Hatari integration, physical serial hardware, remote-supervisor RPC, FTN/NNTP/SMTP/IRC, and BBS filebase publication remain outside M5.

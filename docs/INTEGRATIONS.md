@@ -21,7 +21,7 @@ integrations/bbs/mystic/
   README.md             operator and living-state instructions
 ```
 
-`integrations/bbs/abbs/` uses the same contract while the generic Amiga helpers live in `ubb_integrations.amiga`.
+`integrations/bbs/abbs/` and `integrations/bbs/amiexpress/` use the same contract while canonical profiles live in `ubb_integrations.profiles` and generic Amiga helpers live in `ubb_integrations.amiga`.
 
 No integration installer may contain a direct canonical product downloader. The repository guard scans product integration implementation and the migrating Mystic role for `get_url` and command-line HTTP/FTP `curl`/`wget`; package-manager declarations that happen to install those utilities are permitted.
 
@@ -51,6 +51,8 @@ The production chain resolves `mystic-main -> mystic-local -> mystic-linux -> na
 ## ABBS/Amiga pipeline and M7.3 compatibility
 
 M7.2 selects authentic ABBS for All 3.2 (`ABBS320_999.lha`) as the first family release. Acquisition and verification use M1; a deterministic derived installation tree names the original as parent. Kickstart and AmigaOS remain user-supplied licensed-private assets. Assisted guest installation produces a qualified golden image, then a separate working image that convergence never overwrites. The M5 FS-UAE adapter consumes generated metadata, M3 uses its serial-listener readiness, and M4 routes raw TCP bytes to the emulated serial port. See [AMIGA-INTEGRATIONS.md](AMIGA-INTEGRATIONS.md) and the product README.
+
+M7.3 selects AmiExpress 5.6.1 (`Amix561.lha`) from Aminet. Its rewrite is described as MIT in the package readme, but bundled historical Installer/documentation components have separate rights, so the mixed original is preservation-only. It declares the A1200/OS3.1 profile and reuses the same generic Amiga mechanics. See [AMIGA-PROFILES.md](AMIGA-PROFILES.md) and the product README.
 
 The contract deliberately does not prescribe a container format, host-side executable installer, native runtime, self-hosted TCP listener, or unattended configuration. AmiExpress can reuse prerequisite resolution, FS-UAE profile handling, golden/working images, serial bridging, and qualification helpers without product branching in M1–M5.
 

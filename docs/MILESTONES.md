@@ -61,7 +61,7 @@ The same contract now supports the ABBS family with authentic ABBS for All 3.2 p
 
 ### M7.3 — AmiExpress/Amiga reference integration
 
-Use the same contract with independently preserved AmiExpress media and qualification. No AmiExpress implementation or readiness claim exists yet.
+The AmiExpress family integration selects the authentic Aminet `Amix561.lha` 5.6.1 maintained rewrite, preserves it through M1, records mixed-component rights conservatively, derives installation media with lineage, uses the canonical A1200/OS3.1 profile, and reuses generic golden/working HDF, FS-UAE and serial-bridge mechanics. Real boot/login evidence remains `HUMAN_REQUIRED` pending licensed platform assets; no synthetic result is presented as a real AmiExpress qualification.
 
 ### M7.4 — Tier-1 cross-integration hardening
 

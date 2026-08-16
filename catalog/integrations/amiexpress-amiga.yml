@@ -1,0 +1,40 @@
+kind: integration
+schema_version: 1
+id: amiexpress-amiga
+target: amiexpress-main
+integration_revision: 1
+automation_level: assisted
+runtime: fs_uae
+artifacts:
+  - artifact_id: amiexpress-amiga-5.6.1-original
+    role: preservation_original
+    required: true
+  - artifact_id: amiexpress-amiga-5.6.1-original-install-tree
+    role: derived_install_media
+    required: true
+runtime_config:
+  executable: /usr/bin/fs-uae
+  config_file: /srv/ultimate-bbs-box/integrations/bbs/amiexpress/runtime/amiexpress.fs-uae
+  working_directory: /srv/ultimate-bbs-box/integrations/bbs/amiexpress/runtime
+  stop_timeout_seconds: 20
+  readiness:
+    type: tcp_port
+    host: 127.0.0.1
+    port: 6403
+    timeout_seconds: 300
+  stream:
+    type: tcp
+    host: 127.0.0.1
+    port: 6403
+    connect_timeout_seconds: 10
+installation:
+  steps:
+    - type: acquire
+    - type: verify
+    - type: unpack
+      action: Derive a lineage-recorded installation tree from the preserved LHA.
+    - type: manual
+      instruction: Install the tree in a user-supplied AmigaOS system, complete AmiExpress base configuration, configure serial.device caller mode, remove private data, and approve the golden HDF.
+      evidence_required: [amiexpress_installed, base_configuration_completed, golden_image_qualified]
+qualification:
+  checks: [boots, ready, login, menu, clean_shutdown, network_exchange]

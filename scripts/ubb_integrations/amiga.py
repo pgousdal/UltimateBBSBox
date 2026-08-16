@@ -1,7 +1,7 @@
 """Reusable, product-neutral helpers for assisted Amiga integrations."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import os
 import pathlib
@@ -27,6 +27,12 @@ class AmigaProfile:
     fast_memory_mb: int
     serial_host: str
     serial_port: int
+
+
+def runtime_profile(profile, *, serial_host="127.0.0.1", serial_port=6402):
+    """Adapt a canonical profile to the runtime writer without product knowledge."""
+    return AmigaProfile(profile.fs_uae_model, profile.cpu, profile.chipset, profile.chip_memory_mb,
+                        profile.fast_memory_mb, serial_host, serial_port)
 
 
 def resolve_assets(assets: dict[str, str | pathlib.Path], requirements: tuple[AmigaAsset, ...]) -> dict[str, pathlib.Path]:

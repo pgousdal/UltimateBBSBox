@@ -13,7 +13,8 @@ import tarfile
 import tempfile
 
 import ubb_archive
-from ubb_integrations.amiga import AmigaAsset, AmigaProfile, copy_working_image, resolve_assets, write_fs_uae_config
+from ubb_integrations.amiga import copy_working_image, resolve_assets, runtime_profile, write_fs_uae_config
+from ubb_integrations.profiles import get_profile, validate_profiles
 from ubb_integrations.errors import ArtifactRequiredError, InstallError
 from ubb_integrations.models import InstallResult, QualificationResult, QualificationStatus
 
@@ -37,12 +38,18 @@ class ABBSAmigaIntegration:
     }
     default_release = "3.2-999"
     artifact_id = releases[default_release].artifact_id
-    profile = AmigaProfile("A1200", "68020", "AGA", 2, 8, "127.0.0.1", 6402)
-    prerequisites = (
-        AmigaAsset("kickstart", "licensed_private", "user-supplied compatible Kickstart ROM"),
-        AmigaAsset("amigaos_base_hdf", "licensed_private", "user-supplied AmigaOS 3.x base HDF"),
-    )
+    supported_profiles = ("amiga-a1200-os31",)
+    default_profile = "amiga-a1200-os31"
     manual_evidence = ("abbs_installed", "confignode_completed", "config_bbs_completed", "golden_image_qualified")
+
+    @property
+    def profile(self):
+        validate_profiles(self.supported_profiles, self.default_profile)
+        return get_profile(self.default_profile)
+
+    @property
+    def prerequisites(self):
+        return self.profile.assets
 
     def select_release(self, key=None):
         try: return self.releases[key or self.default_release]
@@ -132,7 +139,7 @@ class ABBSAmigaIntegration:
         if "golden_image_qualified" in evidence and not golden.exists():
             shutil.copyfile(resolved["amigaos_base_hdf"], golden, follow_symlinks=False); golden.chmod(0o440)
         changed = copy_working_image(golden, working) if golden.exists() else False
-        if golden.exists(): write_fs_uae_config(install_root / "runtime" / "abbs.fs-uae", self.profile, kickstart=resolved["kickstart"], working_hdf=working)
+        if golden.exists(): write_fs_uae_config(install_root / "runtime" / "abbs.fs-uae", runtime_profile(self.profile, serial_port=6402), kickstart=resolved["kickstart"], working_hdf=working)
         return InstallResult(artifact_id, metadata["artifact"]["sha256"], str(golden), str(working), changed, self.manual_evidence)
 
     def configure(self, install_root, evidence=()):
