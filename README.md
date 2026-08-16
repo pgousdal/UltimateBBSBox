@@ -212,3 +212,7 @@ namespace and UDP (plus DNS TCP) endpoints on loopback/trusted networks. Daemon
 installation is intentionally delegated to the host package manager; non-package
 third-party payloads remain subject to the M1 preservation-first policy. See
 [`docs/NETWORK-SERVICES.md`](docs/NETWORK-SERVICES.md).
+
+M6.4 adds a conservative private-first NNTP/news model with bounded retention,
+generic BBS mappings, and optional explicit public modes. See
+[`docs/NEWS.md`](docs/NEWS.md); no public Usenet peering occurs in tests.

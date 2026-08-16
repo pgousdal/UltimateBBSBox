@@ -151,3 +151,9 @@ Postfix edge/Mail Core intent, public mail-domain and DNS-policy models,
 privacy-safe recipient routing, generic BBS mail adapter modes, and deterministic
 configuration diagnostics are implemented. Real Internet qualification remains
 operator `HUMAN_REQUIRED` work.
+
+### M6.4 — NNTP / Usenet-style news
+
+INN-oriented private/public mode intent, bounded groups and retention, generic
+BBS news adapters, mappings, feed references, and privacy-safe diagnostics are
+implemented. External peering and product qualification remain `HUMAN_REQUIRED`.

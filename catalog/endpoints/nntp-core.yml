@@ -1,0 +1,7 @@
+kind: endpoint
+schema_version: 1
+id: nntp-core
+type: tcp
+host: 127.0.0.1
+port: 119
+protocol: raw_tcp
