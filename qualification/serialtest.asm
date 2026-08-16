@@ -9,9 +9,12 @@ start:
     pop ds
     cmp byte es:[80h], 8
     jb exchange
-    cmp byte es:[81h], 'S'
+    cmp byte es:[82h], 'S'          ; DOS command tail begins with a space
     je selftest
 exchange:
+    mov dx, serial_ready_msg
+    mov ah, 09h
+    int 21h
     mov ax, 00e3h                 ; BIOS INT 14h: 9600, 8N1
     xor dx, dx                     ; COM1
     int 14h
@@ -148,6 +151,7 @@ fail_text db 'UBB_SERIAL_VERSION=1',13,10,'COM=1',13,10,'METHOD=BIOS',13,10,'RES
 fail_len equ $-fail_text
 reply db 'UBB-OK'
 reply_len equ $-reply
+serial_ready_msg db 'UBB-SERIAL-READY',13,10,'$'
 rx_a db 0
 rx_b db 0
 rx_c db 0

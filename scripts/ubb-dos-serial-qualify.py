@@ -46,6 +46,18 @@ def parse_result(path: Path) -> dict[str, str]:
     return result
 
 
+def read_image_result(image: Path) -> dict[str, str]:
+    """Read the mkfatimage16 partition through mtools after guest shutdown."""
+    command = ["mtype", "-i", f"{image}@@8832", "::UBBQUAL/SERIAL.RST"]
+    output = subprocess.check_output(command, text=True, env={**os.environ, "MTOOLS_SKIP_CHECK": "1"})
+    result: dict[str, str] = {}
+    for line in output.splitlines():
+        if "=" in line:
+            key, value = line.split("=", 1)
+            result[key] = value
+    return result
+
+
 def install_boot_files(drive_c: Path, serialtest: Path, mode: str = "EXCHANGE", image: bool = False) -> None:
     (drive_c / "UBBQUAL").mkdir(parents=True, exist_ok=True)
     (drive_c / "UBBQUAL" / "UBBTEST.COM").write_bytes(serialtest.read_bytes())
@@ -125,6 +137,15 @@ def run(args: argparse.Namespace) -> int:
         if args.mode == "SELFTEST":
             while time.monotonic() < deadline and not result_path.exists():
                 time.sleep(0.05)
+            if args.image and not result_path.exists():
+                # The FAT image is guest-owned until the process has stopped.
+                # Stop the disposable guest, then inspect it with mtools.
+                process.terminate()
+                process.wait(timeout=3)
+                result = read_image_result(args.image)
+                if result.get("RESULT") == "PASS" and result.get("MODE") == "SELFTEST":
+                    print("PASS")
+                    return 0
             if not result_path.exists():
                 raise RuntimeError("SELFTEST result file was not produced")
             result = parse_result(result_path)
@@ -136,6 +157,13 @@ def run(args: argparse.Namespace) -> int:
         reply = read_exact(master, len(EXPECTED_TX), deadline)
         if reply != EXPECTED_TX:
             raise RuntimeError(f"guest reply mismatch: {reply.hex().upper()}")
+        if args.image:
+            process.terminate()
+            process.wait(timeout=3)
+            result = read_image_result(args.image)
+            if result.get("RESULT") == "PASS" and result.get("RX") == EXPECTED_RX.hex().upper():
+                print("PASS")
+                return 0
         while time.monotonic() < deadline and not result_path.exists():
             time.sleep(0.05)
         if not result_path.exists():
