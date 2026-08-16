@@ -166,3 +166,8 @@ and explicit readiness reporting. Run
 integration) to distinguish PASS from human-required observations. Licensed-
 private Amiga assets and real BBS login/menu observations are never fabricated
 or committed.
+
+M7.4a adds authentic Aminet ABBS v1.1 (`abbs1_1.lha`) as a second release of
+the existing ABBS family and aligns Mystic/ABBS deployment recommendations
+with the appliance's normal `always_on` policy. Recommendations remain
+metadata; operators can select `on_demand` without reinstalling.

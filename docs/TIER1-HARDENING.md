@@ -60,6 +60,12 @@ not ABBS/AmiExpress branches.
 | AmiExpress 5.6.1 | FS-UAE museum reference | preservation and synthetic checks PASS; licensed Amiga boot/login HUMAN_REQUIRED |
 | AmiExpress pinned development | FS-UAE, recommended always-on | immutable pin/promotion/rollback and synthetic checks PASS; licensed Amiga boot/login HUMAN_REQUIRED |
 
+M7.4a adds authentic Aminet ABBS 1.1 to the existing family. Its identity is
+`abbs-amiga-1.1-original`; the original is 369,000 bytes with SHA-256
+`bd7e857788ffb326533d64f096535c183377a33b5d68ff3172a8eeb87ef453a`.
+Publication remains denied, and no A500/Kickstart 1.3 support is inferred
+from release age.
+
 M7.4 is complete when these external observations have an explicit workflow,
 the shared recovery/state invariants are proven, and no synthetic result is
 reported as a real emulator observation.

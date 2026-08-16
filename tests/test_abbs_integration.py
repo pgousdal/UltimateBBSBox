@@ -96,10 +96,10 @@ class ABBSIntegrationTests(unittest.TestCase):
     def test_m3_modes_maintenance_and_m4_hold_cleanup(self):
         catalog=self.base/"catalog"; shutil.copytree(ROOT/"catalog",catalog); registry=load_registry(catalog); driver=FakeDriver(); clock=FakeClock()
         supervisor=Supervisor(registry,self.base/"state",driver_resolver=lambda _s:driver,clock=clock)
-        supervisor.reconcile(); self.assertEqual(supervisor.status("abbs-main")["state"],"stopped")
+        supervisor.reconcile(); self.assertEqual(supervisor.status("abbs-main")["state"],"running")
         session=supervisor.acquire_session("abbs-main"); self.assertEqual(supervisor.status("abbs-main")["state"],"running"); supervisor.release_session("abbs-main",session)
-        service=catalog/"services/abbs-main.yml"; service.write_text(service.read_text().replace("mode: on_demand","mode: always_on")); always=load_registry(catalog)
-        sup2=Supervisor(always,self.base/"always",driver_resolver=lambda _s:FakeDriver(),clock=FakeClock()); sup2.reconcile(); self.assertEqual(sup2.status("abbs-main")["state"],"running")
+        service=catalog/"services/abbs-main.yml"; service.write_text(service.read_text().replace("mode: always_on","mode: on_demand")); on_demand=load_registry(catalog)
+        sup2=Supervisor(on_demand,self.base/"on-demand",driver_resolver=lambda _s:FakeDriver(),clock=FakeClock()); sup2.reconcile(); self.assertEqual(sup2.status("abbs-main")["state"],"stopped")
         router=Router(registry,supervisor,self.base/"router",connectors={"tcp":MemoryConnector()}); handle=router.open_session(RouteRequest("abbs-main",terminal=TerminalCapabilities(encoding="amiga-8bit",display="ansi",width=80,height=25)))
         self.assertEqual(supervisor.status("abbs-main")["active_session_count"],1); handle.close(); self.assertEqual(supervisor.status("abbs-main")["active_session_count"],0)
         failing=Router(registry,supervisor,self.base/"fail",connectors={"tcp":MemoryConnector(error=OSError("no bridge"))})

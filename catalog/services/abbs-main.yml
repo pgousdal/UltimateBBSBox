@@ -22,7 +22,7 @@ exposure:
 access:
   direct_allowed: true
 lifecycle:
-  mode: on_demand
+  mode: always_on
   sharing: single_session
   idle_timeout_seconds: 30
   startup_timeout_seconds: 300

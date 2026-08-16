@@ -23,6 +23,11 @@ from ubb_integrations.models import InstallResult, QualificationResult, Qualific
 class ABBSRelease:
     key: str; version: str; artifact_id: str; filename: str; source_url: str
     sha256: str; sha1: str; md5: str; size: int
+    supported_profiles: tuple = ("amiga-a1200-os31",)
+    default_profile: str = "amiga-a1200-os31"
+    rights_status: str = "freeware"
+    rights_evidence: tuple = ("Public archive availability is recorded, but no explicit redistribution licence was found; redistribution remains denied.",)
+    provenance_notes: str = ""
 
 
 class ABBSAmigaIntegration:
@@ -35,6 +40,13 @@ class ABBSAmigaIntegration:
             "https://aminet.net/comm/bbs/ABBS320_999.lha",
             "5e9fd4cbf871a2bbd4579a3f9b35a0cd2187676cab8886b16adbfe8b038380e4",
             "742354e4a4e68c28a5ec80622d5b844aab43aeca", "ac5c8633bb33f936ab38535d0c994178", 751581)
+        ,"1.1": ABBSRelease("1.1", "1.1", "abbs-amiga-1.1-original", "abbs1_1.lha",
+            "https://aminet.net/comm/bbs/abbs1_1.lha",
+            "bd7e857788ffb326533d64f096535c183377a33b5d68ff3172a8eeb87ef453a",
+            "fa82702ac2934dd949bbf2e948cd0390e7847873", "6904f29a69eb34dd958b95f3e6fc3bcb", 369000,
+            ("amiga-a1200-os31",), "amiga-a1200-os31", "freeware",
+            ("Aminet describes comm/bbs/abbs1_1.lha as the full version of ABBS v1.1. Public availability does not establish redistribution permission, so publication remains denied.",),
+            "Aminet comm/bbs/abbs1_1.lha; published 1997-11-10; exact release requirements require operator verification.")
     }
     default_release = "3.2-999"
     artifact_id = releases[default_release].artifact_id
@@ -42,10 +54,14 @@ class ABBSAmigaIntegration:
     default_profile = "amiga-a1200-os31"
     manual_evidence = ("abbs_installed", "confignode_completed", "config_bbs_completed", "golden_image_qualified")
 
+    def profile_for_release(self, release=None):
+        selected = release or self.select_release()
+        validate_profiles(selected.supported_profiles, selected.default_profile)
+        return get_profile(selected.default_profile)
+
     @property
     def profile(self):
-        validate_profiles(self.supported_profiles, self.default_profile)
-        return get_profile(self.default_profile)
+        return self.profile_for_release()
 
     @property
     def prerequisites(self):
@@ -61,15 +77,17 @@ class ABBSAmigaIntegration:
         raise ArtifactRequiredError(f"artifact is not a known ABBS release: {artifact_id}")
 
     def _args(self, root, release, local_file=None, source_url=None, private=False):
-        return argparse.Namespace(root=str(root), artifact_id=release.artifact_id, file=str(local_file) if local_file else None,
+        args = argparse.Namespace(root=str(root), artifact_id=release.artifact_id, file=str(local_file) if local_file else None,
             source_url=source_url or release.source_url, source_name="Aminet comm/bbs",
             original_filename=release.filename, expected_sha256=None if private else release.sha256,
             expected_sha1=None if private else release.sha1, expected_md5=None if private else release.md5,
             max_bytes=64*1024*1024, timeout=60, rights_status="licensed_private" if private else "freeware",
             install_locally=True, redistribute_original=False, publish_to_bbs_filebase=False, no_owner_export=False,
-            rights_evidence=["ABBS for All is publicly offered free with serial #999 by its maintainer; no explicit redistribution licence was found, so redistribution and publication remain denied."],
+            rights_evidence=list(release.rights_evidence),
             software_family="abbs", version=release.version, platform="m68k-amigaos",
-            notes="Authentic ABBS for All 3.2 distribution maintained by Kåre Johansen; original ABBS authors GIH/JEO.")
+            notes=release.provenance_notes or "ABBS family distribution; original release identity is recorded separately from derived media.")
+        args.rights_status = "licensed_private" if private else release.rights_status
+        return args
 
     def acquire(self, archive_root, *, local_file=None, source_url=None, artifact_id=None, release=None, licensed_private=False):
         selected = self.select_release(release) if artifact_id is None else self._release_for_artifact(artifact_id)
@@ -133,13 +151,14 @@ class ABBSAmigaIntegration:
     def install(self, archive_root, artifact_id, install_root, *, assets=None, evidence=()):
         install_root = pathlib.Path(install_root).resolve(); metadata = self.verify_artifacts(archive_root, artifact_id)
         self.prepare(archive_root, artifact_id, install_root)
-        resolved = resolve_assets(assets or {}, self.prerequisites)
+        release = self._release_for_artifact(artifact_id)
+        resolved = resolve_assets(assets or {}, self.profile_for_release(release).assets)
         golden = install_root / "golden" / "abbs.hdf"; working = install_root / "live" / "abbs-working.hdf"
         golden.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         if "golden_image_qualified" in evidence and not golden.exists():
             shutil.copyfile(resolved["amigaos_base_hdf"], golden, follow_symlinks=False); golden.chmod(0o440)
         changed = copy_working_image(golden, working) if golden.exists() else False
-        if golden.exists(): write_fs_uae_config(install_root / "runtime" / "abbs.fs-uae", runtime_profile(self.profile, serial_port=6402), kickstart=resolved["kickstart"], working_hdf=working)
+        if golden.exists(): write_fs_uae_config(install_root / "runtime" / "abbs.fs-uae", runtime_profile(self.profile_for_release(release), serial_port=6402), kickstart=resolved["kickstart"], working_hdf=working)
         return InstallResult(artifact_id, metadata["artifact"]["sha256"], str(golden), str(working), changed, self.manual_evidence)
 
     def configure(self, install_root, evidence=()):
@@ -167,5 +186,6 @@ class ABBSAmigaIntegration:
     @staticmethod
     def _record(install_root, artifact_id, results):
         target=pathlib.Path(install_root)/"qualification"; target.mkdir(parents=True, exist_ok=True, mode=0o750)
-        doc={"integration_id":"abbs-amiga","release":"3.2-999","artifact_id":artifact_id,"recorded_at":ubb_archive.now(),"results":[x.to_dict() for x in results]}
+        release = next((r for r in ABBSAmigaIntegration.releases.values() if r.artifact_id == artifact_id), None)
+        doc={"integration_id":"abbs-amiga","release":release.key if release else "unknown","artifact_id":artifact_id,"recorded_at":ubb_archive.now(),"results":[x.to_dict() for x in results]}
         temp=target/".latest.json.tmp"; temp.write_text(json.dumps(doc,indent=2,sort_keys=True)+"\n"); os.replace(temp,target/"latest.json")

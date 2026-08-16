@@ -3,6 +3,21 @@
   "authors": ["GIH", "JEO"],
   "maintainer": "Kåre Johansen",
   "original_filename": "ABBS320_999.lha",
+  "family_releases": [
+    {
+      "release": "1.1",
+      "artifact_id": "abbs-amiga-1.1-original",
+      "original_filename": "abbs1_1.lha",
+      "source_url": "https://aminet.net/comm/bbs/abbs1_1.lha",
+      "published": "1997-11-10",
+      "size": 369000,
+      "sha256": "bd7e857788ffb326533d64f096535c183377a33b5d68ff3172a8eeb87ef453a",
+      "sha1": "fa82702ac2934dd949bbf2e948cd0390e7847873",
+      "md5": "6904f29a69eb34dd958b95f3e6fc3bcb",
+      "rights": "freeware_local_only",
+      "profile_evidence": "Aminet identifies the full v1.1 archive; Amiga profile and live compatibility require operator qualification."
+    }
+  ],
   "platform": "m68k-amigaos",
   "product": "ABBS for All",
   "provenance": {

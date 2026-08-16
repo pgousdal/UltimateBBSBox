@@ -68,4 +68,11 @@ running process into evidence of a real BBS login/menu observation. Current
 AmiExpress promotion and rollback retain software `current` and `previous`
 pointers while leaving live state untouched by default.
 
+ABBS is one family with two preserved releases: `1.1` (`abbs1_1.lha`) and
+`3.2-999` (`ABBS320_999.lha`). The 1.1 Aminet artifact is independently
+identified and rights-classified; its A1200/OS3.1 profile is an evidence-based
+candidate, not an age-based A500 assumption. Both releases reuse the same
+M1/M3/M4/M5 implementation. Metadata recommends `always_on` for a normal live
+ABBS exhibit, while the configured service mode can remain `on_demand`.
+
 M7.2 does not implement AmiExpress, M6 network/core services, BBS publication, a final menu UI, central identity, or mass ingestion.

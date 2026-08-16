@@ -3,6 +3,7 @@ schema_version: 1
 id: mystic-linux
 target: mystic-main
 integration_revision: 1
+recommended_lifecycle: always_on
 automation_level: assisted
 runtime: native
 artifacts:

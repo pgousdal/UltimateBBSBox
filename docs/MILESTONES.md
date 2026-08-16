@@ -74,3 +74,15 @@ promotion/rollback gates, lifecycle/route cleanup, and readiness reporting are
 implemented and tested. Real Amiga observations remain explicitly
 `HUMAN_REQUIRED` where licensed-private assets are unavailable; no synthetic
 test is presented as a real boot or login.
+
+### M7.4a — ABBS 1.1 and Tier-1 lifecycle policy cleanup — COMPLETE
+
+The ABBS family now preserves authentic Aminet ABBS v1.1 alongside the
+unchanged For All 3.2 reference. Release-specific hashes, rights, profile
+claims, and qualification evidence remain independent. Mystic and ABBS 3.2,
+as well as the AmiExpress current channel, advertise `always_on` as a
+deployment recommendation while service manifests remain configurable.
+
+### M8 — Admin Plane & Observatory
+
+Future work; not implemented by M7.4a.

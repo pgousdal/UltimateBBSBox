@@ -3,6 +3,7 @@ schema_version: 1
 id: abbs-amiga
 target: abbs-main
 integration_revision: 1
+recommended_lifecycle: always_on
 automation_level: assisted
 runtime: fs_uae
 artifacts:
@@ -12,6 +13,9 @@ artifacts:
   - artifact_id: abbs-amiga-3.2-999-original-install-tree
     role: derived_install_media
     required: true
+  - artifact_id: abbs-amiga-1.1-original
+    role: preservation_original
+    required: false
 runtime_config:
   executable: /usr/bin/fs-uae
   config_file: /srv/ultimate-bbs-box/integrations/abbs-amiga/runtime/abbs.fs-uae
