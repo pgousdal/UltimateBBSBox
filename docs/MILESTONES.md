@@ -134,3 +134,13 @@ M6 network/core services remain future work.
 Internal DNS/NTP configuration models, UDP registry endpoints, and safe
 infrastructure declarations are implemented. Later M6 network services remain
 future work.
+
+### M6.2 — Edge Node + Secure Overlay
+
+The provider-neutral edge model, Headscale-first overlay topology, private-site
+and public-identity intent, least-route policy, and conflict-safe ingress model
+are implemented as deterministic configuration/diagnostic fixtures. Provider
+connectivity and VPS qualification remain operator `HUMAN_REQUIRED` work.
+
+M6.3 SMTP/local mail, M6.4 NNTP, M6.5 IRCd, M6.6 FTN, M6.7 QWK/Blue Wave,
+and M6.8 network hardening remain future milestones.

@@ -21,6 +21,12 @@ M8.4 adds derived health and bounded alert lifecycle monitoring. Use
 see [docs/MONITORING.md](docs/MONITORING.md). Remote hosts without telemetry
 remain `UNKNOWN` and no notification or remote-command subsystem is included.
 
+M6.2 adds a provider-neutral public edge/secure-overlay model. Headscale is the
+recommended control plane with Tailscale clients; Tailscale SaaS, WireGuard,
+ZeroTier, and Nebula are alternative configuration providers. The home site
+remains private, public ingress is explicit, and raw Telnet hostname routing is
+not assumed. See [docs/EDGE.md](docs/EDGE.md).
+
 The admin plane's generic backup API preserves integration living state (users,
 messages, configuration and declared file data) separately from immutable M1
 software. Backups are staged, verified and exposed through the authenticated

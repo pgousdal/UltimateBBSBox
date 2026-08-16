@@ -148,3 +148,12 @@ planes as other services. They are not caller-router destinations. Their UDP
 endpoints are represented by the generic `udp` endpoint type; DNS also exposes
 its native TCP endpoint where required. Host package-manager daemons own runtime
 process supervision, while UBB owns validated, deterministic configuration.
+
+## M6.2 public edge
+
+The edge/overlay model is a transport boundary above infrastructure services:
+an Internet-facing VPS publishes only declared ingress and reaches the private
+site over a provider-neutral overlay. Headscale is a control plane, not a VPN
+gateway. Public identities remain external-DNS intent, while M6.1 names remain
+internal. M4 handles logical caller sessions only after a suitable service
+entrypoint exists.
