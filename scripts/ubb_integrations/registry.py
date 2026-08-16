@@ -14,8 +14,9 @@ class IntegrationRegistry:
 
     @classmethod
     def defaults(cls):
+        from integrations.bbs.abbs.integration import ABBSAmigaIntegration
         from integrations.bbs.mystic.integration import MysticLinuxIntegration
-        return cls((MysticLinuxIntegration(),))
+        return cls((ABBSAmigaIntegration(), MysticLinuxIntegration()))
 
     def get(self, integration_id):
         try:
@@ -25,4 +26,3 @@ class IntegrationRegistry:
 
     def list(self):
         return [self._items[key] for key in sorted(self._items)]
-

@@ -1,0 +1,40 @@
+kind: integration
+schema_version: 1
+id: abbs-amiga
+target: abbs-main
+integration_revision: 1
+automation_level: assisted
+runtime: fs_uae
+artifacts:
+  - artifact_id: abbs-amiga-3.2-999-original
+    role: preservation_original
+    required: true
+  - artifact_id: abbs-amiga-3.2-999-original-install-tree
+    role: derived_install_media
+    required: true
+runtime_config:
+  executable: /usr/bin/fs-uae
+  config_file: /srv/ultimate-bbs-box/integrations/abbs-amiga/runtime/abbs.fs-uae
+  working_directory: /srv/ultimate-bbs-box/integrations/abbs-amiga/runtime
+  stop_timeout_seconds: 20
+  readiness:
+    type: tcp_port
+    host: 127.0.0.1
+    port: 6402
+    timeout_seconds: 300
+  stream:
+    type: tcp
+    host: 127.0.0.1
+    port: 6402
+    connect_timeout_seconds: 10
+installation:
+  steps:
+    - type: acquire
+    - type: verify
+    - type: unpack
+      action: Derive a lineage-recorded installation tree from the preserved LHA.
+    - type: manual
+      instruction: Install the tree into a user-supplied AmigaOS HDF, configure an ABBS nullmodem node on serial.device, configure the BBS, remove private/operator data, and approve the golden HDF.
+      evidence_required: [abbs_installed, confignode_completed, config_bbs_completed, golden_image_qualified]
+qualification:
+  checks: [boots, ready, login, menu, clean_shutdown, network_exchange]

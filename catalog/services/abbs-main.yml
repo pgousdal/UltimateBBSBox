@@ -1,0 +1,42 @@
+kind: service
+schema_version: 1
+id: abbs-main
+service:
+  type: bbs
+  title: ABBS for All 3.2 (Amiga)
+  description: Assisted museum integration; destination ABBS owns caller authentication.
+  family: abbs
+  version: "3.2"
+  platform: m68k-amigaos
+  tags: [amiga, museum, assisted]
+  terminal:
+    encoding: amiga-8bit
+    display: ansi
+    columns: 80
+    rows: 25
+endpoint: abbs-serial-bridge
+integration: abbs-amiga
+exposure:
+  main_menu: true
+  via_bbs: []
+access:
+  direct_allowed: true
+lifecycle:
+  mode: on_demand
+  sharing: single_session
+  idle_timeout_seconds: 30
+  startup_timeout_seconds: 300
+  restart: on_failure
+  max_restarts: 2
+  restart_window_seconds: 900
+  readiness:
+    type: driver_specific
+  shutdown_policy: when_idle
+maintenance:
+  jobs:
+    - name: network_exchange
+      schedule: every 6h
+      action: synthetic integration hook; real network exchange is deferred
+      wake_if_stopped: true
+      shutdown_after: true
+      timeout_seconds: 600

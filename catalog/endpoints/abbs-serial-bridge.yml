@@ -1,0 +1,9 @@
+kind: endpoint
+schema_version: 1
+id: abbs-serial-bridge
+type: tcp
+host: 127.0.0.1
+port: 6402
+connect_timeout_seconds: 10
+protocol: raw_tcp
+network_zone: museum_isolated

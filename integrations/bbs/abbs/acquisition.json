@@ -1,0 +1,35 @@
+{
+  "artifact_id": "abbs-amiga-3.2-999-original",
+  "authors": ["GIH", "JEO"],
+  "maintainer": "Kåre Johansen",
+  "original_filename": "ABBS320_999.lha",
+  "platform": "m68k-amigaos",
+  "product": "ABBS for All",
+  "provenance": {
+    "aminet_package": "comm/bbs/ABBS320_999",
+    "aminet_page": "https://aminet.net/package/comm/bbs/ABBS320_999",
+    "maintainer_page": "https://docster.itch.io/abbs-for-all",
+    "notes": "Aminet describes PUBLIC ABBS 3.2 FOR ALL, serial #999. The package documentation credits GIH/JEO; current distribution is maintained by Kåre Johansen.",
+    "source_name": "Aminet comm/bbs",
+    "source_url": "https://aminet.net/comm/bbs/ABBS320_999.lha"
+  },
+  "reference_acquisition": {
+    "acquired_at": "2026-08-16T10:34:52.057217Z",
+    "archive": "isolated temporary M1 archive; binary not committed",
+    "md5": "ac5c8633bb33f936ab38535d0c994178",
+    "sha1": "742354e4a4e68c28a5ec80622d5b844aab43aeca",
+    "sha256": "5e9fd4cbf871a2bbd4579a3f9b35a0cd2187676cab8886b16adbfe8b038380e4",
+    "size": 751581,
+    "verified": true
+  },
+  "rights": {
+    "evidence": "The maintainer offers ABBS for All free with public serial #999. No explicit permission to redistribute the archive was found.",
+    "export_from_archive": true,
+    "install_locally": true,
+    "preserve_locally": true,
+    "publish_to_bbs_filebase": false,
+    "redistribute_original": false,
+    "status": "freeware"
+  },
+  "version": "3.2"
+}

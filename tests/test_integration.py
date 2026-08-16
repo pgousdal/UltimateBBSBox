@@ -46,7 +46,7 @@ class IntegrationTests(unittest.TestCase):
 
     def test_discovery_lookup_unknown_and_assisted_contract(self):
         registry = IntegrationRegistry.defaults()
-        self.assertEqual([item.id for item in registry.list()], ["mystic-linux"])
+        self.assertEqual([item.id for item in registry.list()], ["abbs-amiga", "mystic-linux"])
         self.assertEqual(registry.get("mystic-linux").runtime, "native")
         self.assertEqual(registry.get("mystic-linux").automation_level, "assisted")
         with self.assertRaises(UnknownIntegrationError): registry.get("not-known")

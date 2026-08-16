@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import pathlib
 import sys
@@ -23,8 +24,11 @@ def parser():
             item.add_argument("--artifact-id")
         if command in ("configure", "qualify"):
             item.add_argument("--evidence", action="append", default=[])
+        if command == "install":
+            item.add_argument("--evidence", action="append", default=[])
+            item.add_argument("--asset", action="append", default=[], metavar="NAME=PATH")
     acquire = sub.add_parser("acquire"); acquire.add_argument("integration_id")
-    acquire.add_argument("--file"); acquire.add_argument("--source-url"); acquire.add_argument("--artifact-id")
+    acquire.add_argument("--file"); acquire.add_argument("--source-url"); acquire.add_argument("--artifact-id"); acquire.add_argument("--release")
     return result
 
 
@@ -35,9 +39,21 @@ def main(argv=None):
             print(json.dumps([{"id": x.id, "runtime": x.runtime, "automation_level": x.automation_level} for x in registry.list()], indent=2)); return 0
         integration = registry.get(args.integration_id)
         artifact_id = getattr(args, "artifact_id", None) or integration.artifact_id
-        if args.command == "acquire": value = integration.acquire(args.archive_root, local_file=args.file, source_url=args.source_url, artifact_id=artifact_id)
+        if args.command == "acquire":
+            kwargs={"local_file":args.file,"source_url":args.source_url,"artifact_id":args.artifact_id}
+            if "release" in inspect.signature(integration.acquire).parameters: kwargs["release"]=args.release
+            value = integration.acquire(args.archive_root, **kwargs)
         elif args.command == "verify": value = integration.verify_artifacts(args.archive_root, artifact_id)
-        elif args.command == "install": value = integration.install(args.archive_root, artifact_id, args.install_root).to_dict()
+        elif args.command == "install":
+            assets={}
+            for item in args.asset:
+                if "=" not in item: raise IntegrationError("--asset must be NAME=PATH")
+                name,path=item.split("=",1); assets[name]=path
+            kwargs={}
+            signature=inspect.signature(integration.install).parameters
+            if "assets" in signature: kwargs["assets"]=assets
+            if "evidence" in signature: kwargs["evidence"]=args.evidence
+            value = integration.install(args.archive_root, artifact_id, args.install_root, **kwargs).to_dict()
         elif args.command == "configure": value = integration.configure(args.install_root, args.evidence).to_dict()
         elif args.command == "qualify": value = [x.to_dict() for x in integration.qualify(args.archive_root, artifact_id, args.install_root, evidence=args.evidence)]
         else:

@@ -55,9 +55,9 @@ Mystic, ABBS, and AmiExpress are equal Tier-1 priorities. The submilestone numbe
 
 The first complete preservation-first integration supplies a trusted minimal integration contract, production Mystic acquisition/rights declaration, verified content-addressed installation, separated living state, assisted `mis -cfg` evidence, native M5 runtime configuration, M3/M4 qualification hooks, explicit result vocabulary, CLI, downloader guard, offline tests, and documentation. A real temporary M1 acquisition/install smoke established the A48 SHA-256 and archive layout; production acquisition and first-run login/menu evidence remain operator-specific and are reported as `HUMAN_REQUIRED`, not fabricated as PASS.
 
-### M7.2 — ABBS/Amiga reference integration
+### M7.2 — ABBS/Amiga reference integration — COMPLETE
 
-Use the M7.1 contract with preserved Amiga media, assisted installation, FS-UAE and an appropriate terminal bridge. No ABBS implementation or readiness claim exists yet.
+The same contract now supports the ABBS family with authentic ABBS for All 3.2 provenance and known hashes, M1-only acquisition, conservative rights, lineage-recorded preparation, licensed-private Amiga prerequisites, assisted/resumable installation, golden/working HDF separation, generic FS-UAE metadata, raw serial-over-TCP routing, lifecycle declarations, and machine-readable qualification. A real distribution was acquired and verified through an isolated M1 archive. Licensed Amiga boot assets were unavailable, so boot, ABBS startup, login/menu, and living-state observations remain explicitly `HUMAN_REQUIRED`; no claim was fabricated from synthetic tests.
 
 ### M7.3 — AmiExpress/Amiga reference integration
 

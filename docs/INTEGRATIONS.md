@@ -21,6 +21,8 @@ integrations/bbs/mystic/
   README.md             operator and living-state instructions
 ```
 
+`integrations/bbs/abbs/` uses the same contract while the generic Amiga helpers live in `ubb_integrations.amiga`.
+
 No integration installer may contain a direct canonical product downloader. The repository guard scans product integration implementation and the migrating Mystic role for `get_url` and command-line HTTP/FTP `curl`/`wget`; package-manager declarations that happen to install those utilities are permitted.
 
 ## Operator CLI
@@ -33,6 +35,9 @@ python3 scripts/ubb-integration.py --archive-root PATH --install-root PATH insta
 python3 scripts/ubb-integration.py --install-root PATH configure mystic-linux --evidence version_screen
 python3 scripts/ubb-integration.py --archive-root PATH --install-root PATH qualify mystic-linux
 python3 scripts/ubb-integration.py --install-root PATH status mystic-linux
+python3 scripts/ubb-integration.py --archive-root PATH acquire abbs-amiga
+python3 scripts/ubb-integration.py --archive-root PATH --install-root PATH install abbs-amiga \
+  --asset kickstart=/private/kick.rom --asset amigaos_base_hdf=/private/base.hdf
 ```
 
 The CLI intentionally does not become another lifecycle interface: start/stop remain M3 commands. Qualification callers supply observed runtime/readiness/route outcomes through the Python API; omitted live observations are `SKIP`, never fabricated passes.
@@ -43,8 +48,10 @@ The old configuration combined Mystic `1.12.A3` with an unavailable x64 tar file
 
 The production chain resolves `mystic-main -> mystic-local -> mystic-linux -> native`. M3 owns lifecycle holds and readiness; M4 opens raw TCP after the lifecycle hold; Mystic presents and owns its login. Operators may choose `on_demand` or `always_on` in service lifecycle metadata without reinstalling.
 
-## M7.2 and M7.3 compatibility
+## ABBS/Amiga pipeline and M7.3 compatibility
 
-The contract deliberately does not prescribe a container format, host-side executable installer, native runtime, self-hosted TCP listener, or unattended configuration. ABBS and AmiExpress can therefore implement the same operations with preserved LHA/ADF media, assisted installation, an `fs_uae` runtime, and a configured serial/TCP bridge. M7.1 includes only a synthetic interface test for that shape; it contains no ABBS or AmiExpress product implementation or readiness claim.
+M7.2 selects authentic ABBS for All 3.2 (`ABBS320_999.lha`) as the first family release. Acquisition and verification use M1; a deterministic derived installation tree names the original as parent. Kickstart and AmigaOS remain user-supplied licensed-private assets. Assisted guest installation produces a qualified golden image, then a separate working image that convergence never overwrites. The M5 FS-UAE adapter consumes generated metadata, M3 uses its serial-listener readiness, and M4 routes raw TCP bytes to the emulated serial port. See [AMIGA-INTEGRATIONS.md](AMIGA-INTEGRATIONS.md) and the product README.
 
-M7.1 does not implement M6 network/core services, emulator product configuration, BBS publication, final menu UI, central identity, mass ingestion, or another BBS integration.
+The contract deliberately does not prescribe a container format, host-side executable installer, native runtime, self-hosted TCP listener, or unattended configuration. AmiExpress can reuse prerequisite resolution, FS-UAE profile handling, golden/working images, serial bridging, and qualification helpers without product branching in M1–M5.
+
+M7.2 does not implement AmiExpress, M6 network/core services, BBS publication, a final menu UI, central identity, or mass ingestion.

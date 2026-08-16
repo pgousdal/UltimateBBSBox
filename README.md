@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M7.1 adds the preservation-first Mystic/Linux reference integration.** M0–M5 remain independent layers, M6 remains the reserved network/core-services milestone, and museum integrations are added and qualified one at a time.
+**M7.2 adds the preservation-first ABBS/Amiga reference integration.** M0–M5 and M7.1 remain intact, M6 remains the reserved network/core-services milestone, and museum integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -59,11 +59,14 @@ M5 supplies the default adapter-backed runtime driver. Services without runnable
 
 M7.1 gives Mystic a production `native` runtime configuration and a preservation-first install workflow. A clean install can no longer fetch Mystic directly from Ansible. See [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) and [integrations/bbs/mystic/README.md](integrations/bbs/mystic/README.md).
 
+M7.2 applies that contract to ABBS for All 3.2. It preserves the authentic LHA before deriving an install tree, requires operator-supplied licensed Kickstart/AmigaOS assets, separates golden and mutable HDFs, and routes a raw FS-UAE serial bridge through M3/M4. See [integrations/bbs/abbs/README.md](integrations/bbs/abbs/README.md) and [docs/AMIGA-INTEGRATIONS.md](docs/AMIGA-INTEGRATIONS.md).
+
 ```bash
 python3 scripts/ubb-integration.py list
 python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive acquire mystic-linux
 python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive --install-root /opt/mystic install mystic-linux
 python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive --install-root /opt/mystic qualify mystic-linux
+python3 scripts/ubb-integration.py --archive-root /srv/ultimate-bbs-box/archive acquire abbs-amiga
 ```
 
 ## Session router

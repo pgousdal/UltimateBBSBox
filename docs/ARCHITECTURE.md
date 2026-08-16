@@ -125,7 +125,7 @@ Manual installation steps are legitimate and must record required evidence rathe
 
 The repository started as a Mystic-on-metal deployment. Those roles remain useful, but in M0 they are treated as an early integration rather than the architecture of UBB itself. Later milestones will move acquisition, preservation, lifecycle, routing, and publication concerns out of product-specific roles.
 
-## Museum integration boundary (M7.1)
+## Museum integration boundary (M7.1–M7.2)
 
 M7.1 proves the boundary with one real product declaration: Mystic/Linux. Trusted integration code orchestrates existing public APIs in the order `M1 acquire/verify -> product install/configure -> M5 runtime via M3 -> M4 route -> qualification`. It does not download directly, supervise its own process, implement routing, or make artifact presence equivalent to readiness.
 
@@ -137,4 +137,4 @@ The production state remains split:
 - digest-named software releases remain separate from Mystic's living `data`, `text`, `logs`, and `doors`;
 - M3 state and M4 sessions remain separate from both preservation and living data.
 
-The integration protocol has no assumptions about Linux archives or native execution. M7.2 ABBS and M7.3 AmiExpress can use preserved Amiga media, assisted workflows, FS-UAE, and bridge streams without altering generic core. See [INTEGRATIONS.md](INTEGRATIONS.md).
+M7.2 proves the protocol has no assumptions about Linux archives or native execution. ABBS product code selects releases and guest-side assisted steps; generic Amiga helpers resolve private prerequisites and separate golden/working disks; M5 receives only `fs_uae` metadata; M3 owns boot/readiness and M4 owns raw serial-over-TCP sessions. Preservation, licensed platform assets, installation workspace, golden state, runtime working state, and qualification evidence remain distinct. AmiExpress M7.3 can reuse these generic pieces without altering core. See [INTEGRATIONS.md](INTEGRATIONS.md) and [AMIGA-INTEGRATIONS.md](AMIGA-INTEGRATIONS.md).
