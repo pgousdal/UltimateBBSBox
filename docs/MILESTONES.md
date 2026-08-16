@@ -13,9 +13,11 @@ Acceptance:
 - existing Mystic Ansible role continues to syntax-check and is explicitly classified as an early integration rather than core;
 - no mass-import or mass-install assumption exists in M0.
 
-## M1 — Preservation archive and catalog
+## M1 — Preservation archive and catalog — COMPLETE
 
 Implement immutable content-addressed storage, provenance, rights decisions, acquisition quarantine, derived-artifact lineage, verification, export bundles, and rights-gated publication artifacts.
+
+Acceptance is implemented by the configurable filesystem archive and CLI, additive artifact-v1 schema fields, offline unit tests, and preservation documentation. Network acquisition is quarantined and bounded; SHA-256 objects deduplicate without losing changed-source history; rights default to no redistribution or publication; lineage, verification, human-readable exports, and exact-byte publication staging are covered by `make check`. Actual filebase publication and lifecycle/service registry behavior remain later milestones.
 
 ## M2 — Service and endpoint registry
 

@@ -14,14 +14,17 @@
       "additionalProperties": false,
       "required": ["role", "original_filename", "sha256", "size"],
       "properties": {
-        "role": {"enum": ["preservation_original", "install_source", "documentation", "source_code", "bbs_distribution", "derived"]},
+        "role": {"enum": ["preservation_original", "source_code", "documentation", "install_source", "derived_install_media", "bbs_distribution", "reconstructed", "derived"]},
         "original_filename": {"type": "string", "minLength": 1},
         "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
         "sha1": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
         "md5": {"type": "string", "pattern": "^[0-9a-fA-F]{32}$"},
         "size": {"type": "integer", "minimum": 0},
         "media_type": {"type": "string"},
-        "derived_from": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        "derived_from": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "software_family": {"type": "string"},
+        "version": {"type": "string"},
+        "platform": {"type": "string"}
       }
     },
     "provenance": {
@@ -33,7 +36,10 @@
         "source": {"type": "string", "minLength": 1},
         "source_url": {"type": "string"},
         "publisher": {"type": "string"},
-        "notes": {"type": "string"}
+        "notes": {"type": "string"},
+        "retrieval_method": {"enum": ["http", "https", "local_file", "derived"]},
+        "source_changed": {"type": "boolean"},
+        "previous_artifacts_from_source": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
       }
     },
     "rights": {
@@ -41,12 +47,13 @@
       "additionalProperties": false,
       "required": ["status", "preserve_locally", "install_locally", "redistribute_original", "publish_to_bbs_filebase"],
       "properties": {
-        "status": {"enum": ["public_domain", "freeware", "shareware", "open_source", "commercial", "licensed", "unknown"]},
+        "status": {"enum": ["unknown", "public_domain", "open_source", "freeware", "shareware", "freeware_redistributable", "shareware_redistributable", "commercial", "licensed", "licensed_private", "preservation_only", "restricted"]},
         "license": {"type": "string"},
         "preserve_locally": {"type": "boolean"},
         "install_locally": {"type": "boolean"},
         "redistribute_original": {"type": "boolean"},
         "publish_to_bbs_filebase": {"type": "boolean"},
+        "export_from_archive": {"type": "boolean"},
         "evidence": {"type": "array", "items": {"type": "string"}}
       }
     },
@@ -57,7 +64,29 @@
       "properties": {
         "class": {"enum": ["original", "reconstructed", "derived", "private_preservation"]},
         "immutable": {"type": "boolean"},
-        "status": {"enum": ["READY", "SOURCE_ONLY", "RECONSTRUCTABLE", "KNOWN_MEDIA", "DEMO_ONLY", "LICENSE_RESTRICTED", "WANTED", "LOST", "HISTORICAL_ONLY", "UNVERIFIED"]}
+        "status": {"enum": ["READY", "SOURCE_ONLY", "RECONSTRUCTABLE", "KNOWN_MEDIA", "DEMO_ONLY", "LICENSE_RESTRICTED", "WANTED", "LOST", "HISTORICAL_ONLY", "UNVERIFIED"]},
+        "lineage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parents", "action", "derived_at"],
+          "properties": {
+            "parents": {
+              "type": "array", "minItems": 1, "uniqueItems": true,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["artifact_id", "sha256"],
+                "properties": {
+                  "artifact_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+                  "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+                }
+              }
+            },
+            "action": {"type": "string", "minLength": 1},
+            "tool": {"type": "string"},
+            "derived_at": {"type": "string", "format": "date-time"},
+            "notes": {"type": "string"}
+          }
+        }
       }
     }
   }

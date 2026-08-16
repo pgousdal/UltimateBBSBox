@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M0 is the architecture-contract milestone.** The existing Mystic-on-metal Ansible integration is retained, but Mystic is no longer the architecture: product-specific integrations are expected to be added and qualified one at a time.
+**M1 adds the preservation archive and catalog layer.** The existing Mystic-on-metal Ansible integration is retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -16,7 +16,22 @@ Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and on
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/MILESTONES.md](docs/MILESTONES.md).
 
-## M0 contracts
+## Preservation archive
+
+The dependency-light archive CLI stores immutable, content-addressed objects, records provenance and conservative rights decisions, verifies objects, records derived lineage, and creates museum or rights-gated publication exports. The default production root is `/srv/ultimate-bbs-box/archive`; always select a development root explicitly when working without root privileges.
+
+```bash
+python3 scripts/ubb-archive.py init --root /tmp/ubb-archive
+python3 scripts/ubb-archive.py import-file --root /tmp/ubb-archive \
+  --artifact-id example --file ./software.zip \
+  --source-url https://example.invalid/software.zip --source-name "Example archive"
+python3 scripts/ubb-archive.py verify-all --root /tmp/ubb-archive
+python3 scripts/ubb-archive.py export --root /tmp/ubb-archive example --output /tmp/exports
+```
+
+HTTP/HTTPS `acquire` follows quarantine → identify/hash → immutable preservation. Both acquisition modes deny redistribution and BBS publication unless their explicit flags are supplied with documented rights evidence. See [docs/PRESERVATION.md](docs/PRESERVATION.md).
+
+## Contracts
 
 ```
 schemas/
@@ -26,6 +41,7 @@ schemas/
   integration-v1.schema.json  install/qualification recipe
 catalog/examples/             executable example manifests
 scripts/ubb-schema.py         manifest validator
+scripts/ubb-archive.py        preservation archive CLI
 ```
 
 Validate everything with:
@@ -54,7 +70,7 @@ roles/
 files/mystic_doors/   current Mystic .mpy door placeholders
 ```
 
-These roles continue to work during the transition. M1+ will separate preservation, catalog, lifecycle, routing, backup/state, and publication from individual BBS integrations.
+These roles continue to work during the transition. Later milestones will separate lifecycle, routing, backup/state, and actual BBS publication from individual BBS integrations.
 
 ## Current deployment
 

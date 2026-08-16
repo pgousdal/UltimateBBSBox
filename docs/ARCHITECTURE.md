@@ -61,6 +61,14 @@ Original bytes are immutable. Repacked, patched, converted, or reconstructed art
 
 Redistribution is deny-by-default. `publish_to_bbs_filebase` must be explicitly true before an artifact can be surfaced as a downloadable file on Mystic, ABBS, or another BBS.
 
+### M1 archive boundary
+
+M1 implements this contract as an ordinary-filesystem archive. SHA-256 names immutable objects; artifact IDs name independently validated metadata records. Acquiring the same bytes deduplicates the object, while acquiring changed bytes from the same sanitized source URL creates a new object and cross-references earlier artifact IDs. Network bytes enter `quarantine/` and cannot become a catalog artifact until the complete stream is hashed, any expected checksums match, the object is atomically linked into place, and metadata is durably written.
+
+Rights decisions remain separate booleans: preservation, local installation, original redistribution, owner export, and BBS publication. Their separation is intentional; provenance from a public site grants none of them. M1 only stages exact-byte publication copies and sidecars. It does not update a Mystic or ABBS filebase.
+
+Artifact preservation state also remains independent of the service and integration contracts. An artifact existing in this archive says nothing about whether its software has an integration, is qualified, or is enabled.
+
 ## Mutable state
 
 Preserved artifacts, golden installations, and living mutable state are separate:
