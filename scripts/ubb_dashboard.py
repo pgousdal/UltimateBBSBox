@@ -8,6 +8,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
 from ubb_registry.loader import load_registry
 from ubb_observatory import Observatory
 from ubb_admin import AuthStore, SessionStore, AuditLog, AdminActionService
+from ubb_integrations.registry import IntegrationRegistry
+from ubb_supervisor import Supervisor
 
 CSS="""body{font:15px system-ui,sans-serif;background:#10141b;color:#e9edf2;margin:0}main{max-width:1200px;margin:auto;padding:1.5rem}nav a{color:#9bd1ff;margin-right:1rem}.cards{display:flex;gap:1rem;flex-wrap:wrap}.card,table{background:#19212c;border:1px solid #334255;border-radius:6px;padding:1rem}.card{min-width:8rem}table{width:100%;border-collapse:collapse;padding:0}th,td{text-align:left;padding:.55rem;border-bottom:1px solid #334255}th{color:#b9c7d8}.badge{padding:.15rem .4rem;border-radius:3px;border:1px solid #718096}.critical{color:#ff9c9c}.warning{color:#ffd27d}.info{color:#9bd1ff}.muted{color:#a8b3c2}a{color:#9bd1ff}a:focus,button:focus{outline:2px solid #fff}code{font-family:monospace}h1,h2{margin-top:1.2rem}ul{padding-left:1.2rem}"""
 
@@ -174,5 +176,5 @@ class Handler(BaseHTTPRequestHandler):
 def main(argv=None):
     p=argparse.ArgumentParser(description="Read-only Ultimate BBS Box dashboard")
     p.add_argument("--bind",default="127.0.0.1"); p.add_argument("--port",type=int,default=8088); p.add_argument("--catalog",default="catalog"); p.add_argument("--archive-root"); p.add_argument("--supervisor-state"); p.add_argument("--router-state"); p.add_argument("--install-root",action="append",default=[]); p.add_argument("--auth-users",default="/etc/ultimate-bbs-box/admin-users.json"); p.add_argument("--audit-path",default="/var/log/ultimate-bbs-box/admin-audit.jsonl")
-    a=p.parse_args(argv); roots={x.split("=",1)[0]:x.split("=",1)[1] for x in a.install_root if "=" in x}; obs=Observatory(load_registry(a.catalog),archive_root=a.archive_root,supervisor_state=a.supervisor_state,router_state=a.router_state,install_roots=roots); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),require_auth=True); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
+    a=p.parse_args(argv); roots={x.split("=",1)[0]:x.split("=",1)[1] for x in a.install_root if "=" in x}; registry=load_registry(a.catalog); obs=Observatory(registry,archive_root=a.archive_root,supervisor_state=a.supervisor_state,router_state=a.router_state,install_roots=roots); supervisor=Supervisor(registry,a.supervisor_state) if a.supervisor_state else None; actions=AdminActionService(supervisor=supervisor,integration_registry=IntegrationRegistry.defaults(),install_roots={k:pathlib.Path(v) for k,v in roots.items()},archive_root=a.archive_root); Handler.app=DashboardApp(obs,auth_store=AuthStore(a.auth_users),audit=AuditLog(a.audit_path),actions=actions,require_auth=True); server=ThreadingHTTPServer((a.bind,a.port),Handler); print(f"dashboard listening on http://{a.bind}:{a.port}"); server.serve_forever()
 if __name__=="__main__": main()

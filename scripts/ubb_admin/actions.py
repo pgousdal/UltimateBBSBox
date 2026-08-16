@@ -1,6 +1,6 @@
 from .auth import ROLES
 class AdminActionService:
- def __init__(self,supervisor=None,integration_registry=None,backup=None,qualify=None): self.supervisor=supervisor; self.integrations=integration_registry; self.backup_api=backup; self.qualify_api=qualify
+ def __init__(self,supervisor=None,integration_registry=None,backup=None,qualify=None,install_roots=None,archive_root=None): self.supervisor=supervisor; self.integrations=integration_registry; self.backup_api=backup; self.qualify_api=qualify; self.install_roots=install_roots or {}; self.archive_root=archive_root
  def _p(self,r,n):
   if ROLES.get(r,-1)<ROLES[n]: raise PermissionError('insufficient role')
  def start(self,s,r): self._p(r,'operator'); return self.supervisor.start(s,'admin')
@@ -23,13 +23,19 @@ class AdminActionService:
   return self.backup_api(s)
  def qualify(self,i,release,r):
   self._p(r,'operator')
-  if not self.qualify_api: raise NotImplementedError('qualification API unavailable')
-  return self.qualify_api(i,release)
+  if self.qualify_api: return self.qualify_api(i,release)
+  root=self.install_roots.get(i)
+  if not root or not self.archive_root: raise NotImplementedError('qualification API unavailable')
+  return self.integrations.get(i).qualify(self.archive_root,release,root)
  def promote(self,i,release,r):
   self._p(r,'administrator')
   if not self.integrations: raise NotImplementedError('integration API unavailable')
-  return self.integrations.get(i).promote(release)
+  root=self.install_roots.get(i)
+  if not root: raise NotImplementedError('integration deployment root unavailable')
+  return self.integrations.get(i).promote(root,release)
  def rollback(self,i,r):
   self._p(r,'administrator')
   if not self.integrations: raise NotImplementedError('integration API unavailable')
-  return self.integrations.get(i).rollback()
+  root=self.install_roots.get(i)
+  if not root: raise NotImplementedError('integration deployment root unavailable')
+  return self.integrations.get(i).rollback(root)
