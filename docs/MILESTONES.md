@@ -122,3 +122,9 @@ Derived health states, bounded alert lifecycle persistence, local/remote host
 semantics, authenticated health APIs, and an optional unprivileged monitor timer
 are implemented. Notification delivery and remote supervisor RPC remain future
 work.
+
+### M8.4c — Global preservation-first deployment policy — COMPLETE
+
+Generic deployment manifests, isolated per-service materialization, rights and
+lineage verification, and the repository-wide downloader guard are implemented.
+M6 network/core services remain future work.
