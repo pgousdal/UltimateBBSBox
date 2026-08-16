@@ -1,0 +1,7 @@
+kind: endpoint
+schema_version: 1
+id: unix-v7-remote
+type: remote_supervisor
+host: timemachine.internal
+remote_service_id: unix-v7-pdp11
+network_zone: museum_isolated

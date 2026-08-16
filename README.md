@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M1 adds the preservation archive and catalog layer.** The existing Mystic-on-metal Ansible integration is retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
+**M2 adds the service and endpoint registry.** The existing Mystic-on-metal Ansible integration and M1 preservation archive are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -31,6 +31,19 @@ python3 scripts/ubb-archive.py export --root /tmp/ubb-archive example --output /
 
 HTTP/HTTPS `acquire` follows quarantine → identify/hash → immutable preservation. Both acquisition modes deny redistribution and BBS publication unless their explicit flags are supplied with documented rights evidence. See [docs/PRESERVATION.md](docs/PRESERVATION.md).
 
+## Service registry
+
+Production YAML manifests live separately from educational examples in `catalog/services/`, `catalog/endpoints/`, and `catalog/integrations/`. The read-only registry validates and indexes them, resolves declaration chains, and queries service type, endpoint type, runtime, and exposure metadata without connecting to or controlling anything.
+
+```bash
+python3 scripts/ubb-registry.py validate
+python3 scripts/ubb-registry.py list --main-menu
+python3 scripts/ubb-registry.py list --via-bbs mystic-main
+python3 scripts/ubb-registry.py --json resolve unix-v7-shell
+```
+
+See [docs/REGISTRY.md](docs/REGISTRY.md) for the model and full command set.
+
 ## Contracts
 
 ```
@@ -40,8 +53,10 @@ schemas/
   service-v1.schema.json      BBS/door/MUD/IF/shell/etc + exposure/lifecycle
   integration-v1.schema.json  install/qualification recipe
 catalog/examples/             executable example manifests
+catalog/{services,endpoints,integrations}/  production registry source
 scripts/ubb-schema.py         manifest validator
 scripts/ubb-archive.py        preservation archive CLI
+scripts/ubb-registry.py       registry inspection CLI
 ```
 
 Validate everything with:

@@ -16,9 +16,11 @@
       "properties": {
         "type": {"enum": ["bbs", "door", "mud_world", "talker", "interactive_fiction", "shell", "irc", "nntp", "gopher", "other"]},
         "title": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
         "family": {"type": "string"},
         "version": {"type": "string"},
         "platform": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
         "terminal": {
           "type": "object",
           "additionalProperties": false,
@@ -32,6 +34,7 @@
       }
     },
     "endpoint": {"type": "string", "minLength": 1},
+    "integration": {"type": "string", "minLength": 1},
     "exposure": {
       "type": "object",
       "additionalProperties": false,

@@ -1,0 +1,26 @@
+kind: service
+schema_version: 1
+id: unix-v7-shell
+service:
+  type: shell
+  title: Remote UNIX V7 PDP-11
+  description: Catalog metadata for a remote destination; availability is not asserted.
+  family: unix-v7
+  platform: pdp11
+  tags:
+    - remote
+    - historical-unix
+endpoint: unix-v7-remote
+exposure:
+  main_menu: false
+  via_bbs:
+    - mystic-main
+access:
+  direct_allowed: false
+  notes: Authentication belongs to the remote UNIX destination.
+lifecycle:
+  mode: on_demand
+  sharing: multiuser
+  startup_timeout_seconds: 120
+  restart: on_failure
+  shutdown_policy: when_idle

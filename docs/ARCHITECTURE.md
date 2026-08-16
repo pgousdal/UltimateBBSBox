@@ -47,6 +47,12 @@ Scheduled maintenance is orthogonal to availability. An on-demand BBS may wake a
 
 A service endpoint may be on another machine. This is first-class, not a workaround. A front-end UBB instance may route a caller to a remote supervisor hosting SIMH, QEMU, UNIX Time Machine, VAX/VMS, MUDs, or other services.
 
+## M2 registry boundary
+
+Repository YAML under `catalog/services/`, `catalog/endpoints/`, and `catalog/integrations/` is the authoritative production control-plane registry. M2 validates these manifests with the M0 schemas, indexes each kind independently, rejects duplicate IDs and unresolved references, and resolves a service declaration to its endpoint and optional integration. Endpoint normalization is generic across local process, TCP, SSH, serial, and remote-supervisor metadata.
+
+Exposure and lifecycle declarations are data in M2. Queries may select main-menu, hidden, or via-BBS services, but do not build menus, enforce access, schedule maintenance, allocate sessions, connect endpoints, or start processes. Likewise, catalog presence, preserved artifacts, integration presence, qualification evidence, declarative enablement, and runtime state remain distinct. An M2 registry result never claims that a service is installed, qualified, enabled, reachable, or running.
+
 ## Preservation
 
 Network-acquired artifacts must not be consumed directly by installers. The required flow is:

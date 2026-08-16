@@ -9,7 +9,7 @@
     "kind": {"const": "endpoint"},
     "schema_version": {"const": 1},
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
-    "type": {"enum": ["local_process", "tcp", "ssh", "serial", "supervisor"]},
+    "type": {"enum": ["local_process", "tcp", "ssh", "serial", "supervisor", "remote_supervisor"]},
     "host": {"type": "string"},
     "port": {"type": "integer", "minimum": 1, "maximum": 65535},
     "protocol": {"enum": ["raw_tcp", "telnet", "ssh", "serial", "supervisor"]},
@@ -23,6 +23,7 @@
     {"if": {"properties": {"type": {"const": "tcp"}}}, "then": {"required": ["host", "port", "protocol"]}},
     {"if": {"properties": {"type": {"const": "serial"}}}, "then": {"required": ["device", "baud"]}},
     {"if": {"properties": {"type": {"const": "local_process"}}}, "then": {"required": ["command"]}},
-    {"if": {"properties": {"type": {"const": "supervisor"}}}, "then": {"required": ["host", "remote_service_id"]}}
+    {"if": {"properties": {"type": {"const": "ssh"}}}, "then": {"required": ["host"]}},
+    {"if": {"properties": {"type": {"enum": ["supervisor", "remote_supervisor"]}}}, "then": {"required": ["host", "remote_service_id"]}}
   ]
 }

@@ -1,0 +1,25 @@
+kind: service
+schema_version: 1
+id: mystic-main
+service:
+  type: bbs
+  title: Ultimate BBS Box Mystic
+  description: Existing assisted Mystic-on-Linux deployment.
+  family: mystic
+  platform: linux-x86_64
+  tags:
+    - local
+    - production
+endpoint: mystic-local
+integration: mystic-linux
+exposure:
+  main_menu: true
+  via_bbs: []
+access:
+  direct_allowed: true
+lifecycle:
+  mode: always_on
+  sharing: multiuser
+  startup_timeout_seconds: 60
+  restart: on_failure
+  shutdown_policy: manual

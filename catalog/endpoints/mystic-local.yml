@@ -1,0 +1,8 @@
+kind: endpoint
+schema_version: 1
+id: mystic-local
+type: tcp
+host: 127.0.0.1
+port: 6400
+protocol: telnet
+network_zone: internal_services

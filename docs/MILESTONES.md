@@ -19,9 +19,11 @@ Implement immutable content-addressed storage, provenance, rights decisions, acq
 
 Acceptance is implemented by the configurable filesystem archive and CLI, additive artifact-v1 schema fields, offline unit tests, and preservation documentation. Network acquisition is quarantined and bounded; SHA-256 objects deduplicate without losing changed-source history; rights default to no redistribution or publication; lineage, verification, human-readable exports, and exact-byte publication staging are covered by `make check`. Actual filebase publication and lifecycle/service registry behavior remain later milestones.
 
-## M2 — Service and endpoint registry
+## M2 — Service and endpoint registry — COMPLETE
 
 Persist and query service/endpoint manifests. Resolve local, serial, TCP, SSH, and remote-supervisor endpoints without product-specific branching.
+
+Acceptance is implemented by production catalog directories, a shared M0 schema validator, a deterministic in-memory registry API, generic reference resolution, exposure/type/runtime filters, CLI text/JSON inspection, representative local and remote manifests, and offline tests. M2 is metadata only; it performs no lifecycle action, network connection, routing, or installer execution.
 
 ## M3 — Lifecycle supervisor
 

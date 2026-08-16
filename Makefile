@@ -1,9 +1,12 @@
-.PHONY: check schema test ansible-syntax
+.PHONY: check schema registry test ansible-syntax
 
-check: schema test ansible-syntax
+check: schema registry test ansible-syntax
 
 schema:
 	python3 scripts/ubb-schema.py
+
+registry:
+	python3 scripts/ubb-registry.py validate
 
 test:
 	python3 -m unittest discover -s tests -v

@@ -1,0 +1,25 @@
+kind: integration
+schema_version: 1
+id: mystic-linux
+target: mystic-main
+integration_revision: 1
+automation_level: assisted
+runtime: native
+installation:
+  steps:
+    - type: acquire
+    - type: verify
+    - type: automated
+      action: Run the existing mystic_bbs Ansible role.
+    - type: manual
+      instruction: Complete first-time configuration using MIS.
+      evidence_required:
+        - version_screen
+        - configured_message_base
+qualification:
+  checks:
+    - boots
+    - ready
+    - login
+    - menu
+    - clean_shutdown
