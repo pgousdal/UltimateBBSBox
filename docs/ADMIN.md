@@ -64,6 +64,10 @@ Backup semantics and least-privilege ownership are described in
 The M8.3d HTTP fixture verifies login, role-specific controls, CSRF rejection,
 delegated actions, backup/qualification/release paths, concurrency, and audit
 privacy. The complete criterion mapping is in [M8.3-ACCEPTANCE.md](M8.3-ACCEPTANCE.md).
+
+Administrative auditing is request-scoped rather than operation-scoped. Every
+authenticated write request has one terminal audit outcome and unique request
+ID, even when M3 coalesces the underlying operation with another request.
 ### Infrastructure services
 
 The M6.1 DNS and NTP entries are hidden infrastructure services. They are

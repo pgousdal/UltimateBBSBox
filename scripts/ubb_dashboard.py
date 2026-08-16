@@ -163,9 +163,10 @@ class Handler(BaseHTTPRequestHandler):
             supplied=self.headers.get('X-CSRF-Token') or body.get('csrf',[''])[0]
             if not supplied or not secrets.compare_digest(supplied,session['csrf']):
                 parts=[x for x in path.split('/') if x]; action=parts[-1] if parts else 'unknown'; target=parts[-2] if len(parts)>4 else 'admin'
-                if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,'denied',remote=self.client_address[0],message='csrf rejected')
+                request_id = secrets.token_urlsafe(16)
+                if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,'denied',remote=self.client_address[0],message='csrf rejected',request_id=request_id)
                 self._send(403,'CSRF rejected'); return
-            self._action(path,session,body); return
+            self._action(path,session,body,request_id=secrets.token_urlsafe(16)); return
         self.send_error(405)
     def do_PUT(self): self.send_error(405)
     def do_DELETE(self): self.send_error(405)
@@ -184,8 +185,10 @@ class Handler(BaseHTTPRequestHandler):
         if token:self.app.sessions.remove(token)
         self._send(303,'',headers={'Location':'/admin/login','Set-Cookie':'ubb_admin=; Max-Age=0; HttpOnly; SameSite=Strict'})
     def _audit(self): self._send(200,json.dumps(self.app.audit.read() if self.app.audit else [],sort_keys=True).encode(),'application/json; charset=utf-8')
-    def _action(self,path,session,form=None):
+    def _action(self,path,session,form=None,request_id=None):
         parts=[x for x in path.split('/') if x]; action=parts[-1]; target=parts[-2] if len(parts)>4 else 'integration'; result='failure'; message=''
+        status = 200
+        payload = None
         try:
             if not self.app.actions: raise RuntimeError('action service unavailable')
             form=form or {}
@@ -199,13 +202,19 @@ class Handler(BaseHTTPRequestHandler):
             elif action=='rollback': value=self.app.actions.rollback(form.get('integration',['amiexpress-amiga'])[0],session['role'])
             elif action=='lifecycle': value=self.app.actions.lifecycle(target,form.get('mode',[''])[0],session['role'])
             else: raise ValueError('unsupported action')
-            result='success'; message='action delegated'; self._send(200,json.dumps({'result':result,'value':_jsonable(value)},sort_keys=True),'application/json; charset=utf-8')
-        except PermissionError as exc: result='denied'; message=str(exc); self._send(403,json.dumps({'error':message}),'application/json; charset=utf-8')
-        except ValueError as exc: message=str(exc); self._send(422,json.dumps({'error':message}),'application/json; charset=utf-8')
-        except (NotImplementedError, BackupError) as exc: message=str(exc); self._send(409,json.dumps({'error':message or 'action unavailable'}),'application/json; charset=utf-8')
-        except Exception as exc: message=str(exc); self._send(500,json.dumps({'error':'action failed'}),'application/json; charset=utf-8')
-        finally:
-            if self.app.audit:self.app.audit.append(session['username'],session['role'],action,target,result,source='web',message=message,remote=self.client_address[0])
+            result='success'; message='action delegated'; payload={'result':result,'value':_jsonable(value)}
+        except PermissionError as exc: status=403; result='denied'; message=str(exc); payload={'error':message}
+        except ValueError as exc: status=422; message=str(exc); payload={'error':message}
+        except (NotImplementedError, BackupError) as exc: status=409; message=str(exc); payload={'error':message or 'action unavailable'}
+        except Exception: status=500; message='action failed'; payload={'error':'action failed'}
+        if result == 'success':
+            status = 200
+        elif status == 200:
+            status = 403
+            payload = {'error': message}
+        if self.app.audit:
+            self.app.audit.append(session['username'],session['role'],action,target,result,source='web',message=message,remote=self.client_address[0],request_id=request_id or secrets.token_urlsafe(16))
+        self._send(status,json.dumps(payload,sort_keys=True),'application/json; charset=utf-8')
 
 def main(argv=None):
     p=argparse.ArgumentParser(description="Read-only Ultimate BBS Box dashboard")

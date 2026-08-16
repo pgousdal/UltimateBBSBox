@@ -162,9 +162,30 @@ class AdminE2ETests(unittest.TestCase):
         def call(path):
             barrier.wait(); results.append(self.req("POST",path,"csrf="+session["csrf"],cookie=cookie)[0])
         threads=[threading.Thread(target=call,args=("/api/v1/admin/services/demo/start",)),threading.Thread(target=call,args=("/api/v1/admin/services/demo/start",))]
-        [t.start() for t in threads]; [t.join() for t in threads]; self.assertEqual(sorted(results),[200,200]); self.assertEqual(sum(x["action"]=="start" for x in self.audit.read()),2)
+        [t.start() for t in threads]; [t.join() for t in threads]; self.assertEqual(sorted(results),[200,200]); starts=[x for x in self.audit.read() if x["action"]=="start"]; self.assertEqual(len(starts),2); self.assertEqual(len({x["request_id"] for x in starts}),2)
         results=[]; threads=[threading.Thread(target=call,args=("/api/v1/admin/services/demo/backup",)),threading.Thread(target=call,args=("/api/v1/admin/services/demo/backup",))]
-        [t.start() for t in threads]; [t.join() for t in threads]; self.assertEqual(sorted(results),[200,200]); self.assertEqual(sum(x["action"]=="backup" for x in self.audit.read()),2)
+        [t.start() for t in threads]; [t.join() for t in threads]; self.assertEqual(sorted(results),[200,200]); backups=[x for x in self.audit.read() if x["action"]=="backup"]; self.assertEqual(len(backups),2); self.assertEqual(len({x["request_id"] for x in backups}),2)
+
+    def test_concurrent_audit_lines_are_complete_json(self):
+        barrier = threading.Barrier(16)
+        errors = []
+
+        def append(index):
+            try:
+                barrier.wait()
+                self.audit.append("operator", "operator", "start", "demo", "success", request_id=f"request-{index}")
+            except Exception as exc:
+                errors.append(exc)
+
+        threads = [threading.Thread(target=append, args=(index,)) for index in range(16)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        self.assertFalse(errors)
+        records = self.audit.read(limit=32)
+        self.assertEqual(len(records), 16)
+        self.assertEqual({record["request_id"] for record in records}, {f"request-{i}" for i in range(16)})
 
     def test_systemd_boundary_is_unprivileged_and_archive_read_only(self):
         unit=(Path(__file__).resolve().parents[1]/"systemd/ubb-dashboard.service").read_text()

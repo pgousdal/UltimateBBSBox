@@ -36,6 +36,12 @@ M8.3b completes registered maintenance, backup, qualification, and AmiExpress
 promotion/rollback routes. Operators use the same delegated action service as
 the web/API layer; administrators alone may change lifecycle policy or release
 pointers. Dashboard forms are role-filtered and every attempt is audited.
+
+Audit is request-level evidence: each authenticated action request receives one
+terminal record and a unique request ID. M3 may coalesce duplicate lifecycle
+operations, so two concurrent start requests can produce two audit records while
+only one runtime start executes. The JSONL writer serializes in-process appends;
+cross-process locking is not claimed.
 # Login throttling
 
 The admin dashboard uses bounded in-memory `LoginThrottle` state keyed by
