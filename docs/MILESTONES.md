@@ -31,9 +31,11 @@ Implement `on_demand`, `always_on`, readiness, idle shutdown, multiuser sharing,
 
 Acceptance is implemented by the explicit state machine, counted holds, generic driver protocol, fake and local-process drivers, bounded recovery, injected clock, interval/daily scheduler, atomic state and JSONL journal, reconciliation, CLI, systemd one-shot/timer examples, and deterministic concurrency tests. Terminal routing, menus, runtime-specific adapters, remote RPC, and network services remain later milestones.
 
-## M4 — Session router and exposure policy
+## M4 — Session router and exposure policy — COMPLETE
 
 Implement main-menu exposure, via-BBS-only services, stream handoff, terminal metadata, and remote endpoint routing. No mandatory UBB end-user login.
+
+Acceptance is implemented by the explicit session model/state graph, exposure policy, active-origin anchoring, M2 resolution, M3 hold ownership, extensible terminal metadata, raw TCP and injectable stream contracts, generic handoff/return semantics, idempotent teardown, metadata-only JSONL journal, CLI inspection, and deterministic tests. Emulator transports, actual BBS door integration, authenticated IPC, and network services remain later milestones.
 
 ## M5 — Runtime adapters
 

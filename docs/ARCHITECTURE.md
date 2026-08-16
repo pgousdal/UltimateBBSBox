@@ -31,6 +31,14 @@ caller -> BBS door -> remote UNIX -> UNIX login
 
 A future optional identity bridge may exist for selected services, but it is not part of the v1 core contract.
 
+## M4 routing boundary
+
+M4 enforces exposure as route authorization. A direct route requires both `main_menu: true` and `access.direct_allowed` (true by default); an administrative-only declaration is denied because M4 has no identity assertion system. A via-service route must name an allowed `via_bbs` service and be anchored to an active parent session for that origin, so merely supplying a BBS ID cannot bypass direct-route policy.
+
+Router sessions have their own explicit state machine, separate from M3 runtime instances. Opening resolves M2 metadata, acquires an M3 logical session hold, and only then connects a transport. Close, EOF, and failure paths own cleanup exactly once. Terminal capabilities and opaque non-secret caller metadata travel with the session, but authentication credentials and terminal bytes belong to the destination/stream and are never journaled.
+
+M4 provides raw generic TCP and injected stream contracts. It does not perform Telnet negotiation, suspend a real BBS stream, connect SSH/serial/remote-supervisor endpoints by default, build menus, synchronize accounts, or implement product/runtime adapters. Handoff and return-to-origin are modeled as a parent/child session relationship for later integrations.
+
 ## Lifecycle
 
 Every runnable service can select independently:

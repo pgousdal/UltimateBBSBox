@@ -4,5 +4,6 @@ id: mystic-local
 type: tcp
 host: 127.0.0.1
 port: 6400
+connect_timeout_seconds: 5
 protocol: telnet
 network_zone: internal_services

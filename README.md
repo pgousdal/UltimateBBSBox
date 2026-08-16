@@ -2,7 +2,7 @@
 
 Ultimate BBS Box is infrastructure-as-code for a BBS-centric preservation and online-services appliance. It began as a Debian/Mystic deployment for an industrial multi-serial mini-PC and is being generalized into a modular system capable of preserving and running historical BBSes, doors, MUDs/online worlds, interactive fiction, remote shells, and supporting communications services.
 
-**M3 adds the generic lifecycle supervisor.** The existing Mystic-on-metal Ansible integration, preservation archive, and service registry are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
+**M4 adds exposure-enforcing session routing.** The existing Mystic-on-metal Ansible integration, preservation archive, registry, and lifecycle supervisor are retained, but Mystic is not the architecture: product-specific integrations are added and qualified one at a time.
 
 ## Core rules
 
@@ -57,6 +57,19 @@ python3 scripts/ubb-supervisor.py --state-dir /tmp/ubb-state --json status mysti
 
 The bundled production driver only supports generic `local_process` endpoints. Existing TCP/remote services remain managed by their current deployment until future runtime adapters exist; the supervisor fails closed rather than pretending it can control them. See [docs/SUPERVISOR.md](docs/SUPERVISOR.md).
 
+## Session router
+
+M4 authorizes direct and via-service paths, anchors via routes to real active origin sessions, acquires and releases M3 session holds, carries extensible terminal metadata, and exposes raw bidirectional stream handles. TCP is the only built-in network connector; other endpoint transports fail explicitly unless a connector is injected.
+
+```bash
+python3 scripts/ubb-router.py services --direct
+python3 scripts/ubb-router.py authorize mystic-main
+python3 scripts/ubb-router.py authorize unix-v7-shell --via mystic-main
+python3 scripts/ubb-router.py --json services --direct
+```
+
+The authorization CLI inspects declared route policy; actual via-service opens additionally require an active origin session. UBB does not authenticate destination users or log terminal content. See [docs/ROUTER.md](docs/ROUTER.md).
+
 ## Contracts
 
 ```
@@ -71,6 +84,7 @@ scripts/ubb-schema.py         manifest validator
 scripts/ubb-archive.py        preservation archive CLI
 scripts/ubb-registry.py       registry inspection CLI
 scripts/ubb-supervisor.py     lifecycle supervisor CLI
+scripts/ubb-router.py         exposure policy inspection CLI
 ```
 
 Validate everything with:
