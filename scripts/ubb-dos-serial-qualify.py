@@ -14,6 +14,9 @@ import pty
 
 EXPECTED_RX = bytes.fromhex("41 42 43")
 EXPECTED_TX = b"UBB-OK"
+MATRIX_BYTES = bytes.fromhex(
+    "00 01 0A 0D 1B 20 41 7F 80 B3 C4 DA FF 1B 5B 33 31 6D 0D 0A B3 C4 DA"
+)
 
 
 def raw_fd(fd: int) -> None:
@@ -56,6 +59,17 @@ def read_image_result(image: Path) -> dict[str, str]:
             key, value = line.split("=", 1)
             result[key] = value
     return result
+
+
+def print_exchange_evidence(host_tx: bytes, host_rx: bytes, result: dict[str, str]) -> None:
+    """Emit byte-exact host observations alongside the guest result record."""
+    print(f"HOST_TX_LENGTH={len(host_tx)}")
+    print(f"HOST_TX_HEX={host_tx.hex().upper()}")
+    print(f"HOST_RX_LENGTH={len(host_rx)}")
+    print(f"HOST_RX_HEX={host_rx.hex().upper()}")
+    for key in ("MODE", "RX", "TX", "RX_STATUS", "TX_STATUS", "RESULT"):
+        if key in result:
+            print(f"GUEST_{key}={result[key]}")
 
 
 def install_boot_files(drive_c: Path, serialtest: Path, mode: str = "EXCHANGE", image: bool = False) -> None:
@@ -153,15 +167,31 @@ def run(args: argparse.Namespace) -> int:
                 raise RuntimeError(f"SELFTEST reported failure: {result}")
             print("PASS")
             return 0
-        os.write(master, EXPECTED_RX)
-        reply = read_exact(master, len(EXPECTED_TX), deadline)
-        if reply != EXPECTED_TX:
-            raise RuntimeError(f"guest reply mismatch: {reply.hex().upper()}")
+        if args.mode == "MATRIX":
+            host_tx = MATRIX_BYTES
+            os.write(master, host_tx)
+            reply = read_exact(master, len(MATRIX_BYTES), deadline)
+            if reply != MATRIX_BYTES:
+                raise RuntimeError(f"matrix reply mismatch: {reply.hex().upper()}")
+        else:
+            host_tx = EXPECTED_RX
+            os.write(master, host_tx)
+            reply = read_exact(master, len(EXPECTED_TX), deadline)
+            if reply != EXPECTED_TX:
+                raise RuntimeError(f"guest reply mismatch: {reply.hex().upper()}")
         if args.image:
+            # The guest sends its final byte immediately before writing the
+            # result record. Give that DOS-local FAT write a bounded moment to
+            # complete before stopping DOSEMU2 for offline mtools inspection.
+            time.sleep(0.25)
             process.terminate()
             process.wait(timeout=3)
             result = read_image_result(args.image)
-            if result.get("RESULT") == "PASS" and result.get("RX") == EXPECTED_RX.hex().upper():
+            expected = MATRIX_BYTES.hex().upper() if args.mode == "MATRIX" else EXPECTED_RX.hex().upper()
+            expected_tx = (MATRIX_BYTES if args.mode == "MATRIX" else EXPECTED_TX).hex().upper()
+            if (result.get("RESULT") == "PASS" and result.get("RX") == expected
+                    and result.get("TX") == expected_tx):
+                print_exchange_evidence(host_tx, reply, result)
                 print("PASS")
                 return 0
         while time.monotonic() < deadline and not result_path.exists():
@@ -169,8 +199,12 @@ def run(args: argparse.Namespace) -> int:
         if not result_path.exists():
             raise RuntimeError("guest result file was not produced")
         result = parse_result(result_path)
-        if result.get("RESULT") != "PASS" or result.get("RX") != EXPECTED_RX.hex().upper():
+        expected = MATRIX_BYTES.hex().upper() if args.mode == "MATRIX" else EXPECTED_RX.hex().upper()
+        expected_tx = (MATRIX_BYTES if args.mode == "MATRIX" else EXPECTED_TX).hex().upper()
+        if (result.get("RESULT") != "PASS" or result.get("RX") != expected
+                or result.get("TX") != expected_tx):
             raise RuntimeError(f"guest reported failure: {result}")
+        print_exchange_evidence(host_tx, reply, result)
         print("PASS")
         return 0
     finally:
@@ -194,7 +228,7 @@ def main() -> int:
     parser.add_argument("--workdir", type=Path, required=True)
     parser.add_argument("--library-path", default="")
     parser.add_argument("--timeout", type=float, default=30)
-    parser.add_argument("--mode", choices=("SELFTEST", "EXCHANGE"), default="EXCHANGE")
+    parser.add_argument("--mode", choices=("SELFTEST", "EXCHANGE", "MATRIX"), default="EXCHANGE")
     parser.add_argument("--image", type=Path, default=None)
     args = parser.parse_args()
     try:

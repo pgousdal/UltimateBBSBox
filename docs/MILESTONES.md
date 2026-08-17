@@ -215,8 +215,9 @@ diagnostics are implemented. Real peer and Tier-1 qualification remain
 
 ### M9.1a — Real DOSEMU2 + FreeDOS Qualification
 
-Incomplete on the current host: DOSEMU2 and an approved M1-preserved FreeDOS
-artifact are unavailable, so no real boot or COM qualification is claimed. See
+Incomplete: real Debian/DOSEMU2/FreeDOS headless boot and binary-safe COM1 now
+pass, including exact CP437/ANSI/CRLF matrices and repeatability. The original
+contract's clean stop/restart and two-instance criteria remain untested. See
 `docs/M9.1a-QUALIFICATION.md`.
 
 ### M9.1b — Debian DOSEMU2 + FreeDOS 1.4 Provisioning
@@ -232,7 +233,7 @@ BBS news adapters, mappings, feed references, and privacy-safe diagnostics are
 implemented. External peering and product qualification remain `HUMAN_REQUIRED`.
 ### M9.1d — Prove or Reject DOSEMU2 Serial
 
-Incomplete: the Debian VM and pinned runtime were inspected, including correction
-of the library-path invocation, but the minimal direct COM1/PTY reproducer and
-serial root-cause evidence are not yet complete. See
+Complete: the direct COM1/PTY reproducer isolated an incorrect BIOS INT 14h
+status-register check in the DOS probe; checking `AH` fixed both directions.
+Binary matrix follow-up confirms the corrected path. See
 `docs/M9.1d-SERIAL-INVESTIGATION.md`.
