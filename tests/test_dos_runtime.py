@@ -1,6 +1,9 @@
 import sys
 import threading
 import unittest
+import hashlib
+import json
+import tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -8,7 +11,8 @@ from ubb_dos import (COMPort, DOSConfigError, DOSDeployment, DOSProfile,
                      DriveMapping, MachineProfile, NodeAllocator, TerminalProfile,
                      backend_evidence, boot_marker_ready, debian_provisioning_plan,
                      default_profiles, freedos_release_metadata, qualification,
-                     qualification_evidence, validate_dos_filename)
+                     qualification_evidence, validate_dos_filename,
+                     DOSProvisioningError, PinnedDOSInput, verify_preserved_input)
 from ubb_runtime import DOSAdapter, RuntimeAdapterRegistry, UnsupportedAdapter
 
 
@@ -69,6 +73,35 @@ class DOSRuntimeTests(unittest.TestCase):
         with self.assertRaises(DOSConfigError): debian_provisioning_plan(target_os="ubuntu")
         self.assertEqual(freedos_release_metadata()["state"], "HUMAN_REQUIRED")
         with self.assertRaises(DOSConfigError): freedos_release_metadata(version="1.3")
+        plan = debian_provisioning_plan(
+            release="13", source_commit="82770aba398485117c56523a1a5c261f6e37ca64",
+            source_sha256="8" * 64)
+        self.assertEqual(plan["method"], "pinned_source")
+        self.assertEqual(plan["install_prefix"], "/opt/ultimate-bbs-box/dosemu2/82770aba3984")
+        with self.assertRaises(DOSConfigError):
+            debian_provisioning_plan(release="13", source_commit="main", source_sha256="8" * 64)
+
+    def test_provisioning_consumes_only_verified_archive_objects(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "archive"; (root / "objects" / "sha256").mkdir(parents=True)
+            (root / "metadata").mkdir(); (root / "state").mkdir()
+            (root / "state" / "archive-v1.json").write_text('{}')
+            payload = b"pinned source"
+            digest = hashlib.sha256(payload).hexdigest()
+            obj = root / "objects" / "sha256" / digest[:2] / digest
+            obj.parent.mkdir(); obj.write_bytes(payload)
+            meta = {"kind":"artifact", "schema_version":1, "id":"fixture",
+                    "artifact":{"sha256":digest,"size":len(payload),"role":"source_code","original_filename":"fixture.tar.gz"},
+                    "provenance":{"acquired_at":"2026-01-01T00:00:00Z","source":"fixture"},
+                    "rights":{"status":"open_source","preserve_locally":True,"install_locally":True,
+                              "redistribute_original":False,"publish_to_bbs_filebase":False,"export_from_archive":False},
+                    "preservation":{"class":"original","immutable":True}}
+            (root / "metadata" / "fixture.json").write_text(json.dumps(meta))
+            expected = PinnedDOSInput("fixture", digest, len(payload), "source_code")
+            result = verify_preserved_input(root, expected)
+            self.assertEqual(result["sha256"], digest)
+            obj.write_bytes(b"tampered")
+            with self.assertRaises(DOSProvisioningError): verify_preserved_input(root, expected)
 
 
 if __name__ == "__main__": unittest.main()

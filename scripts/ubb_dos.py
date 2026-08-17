@@ -11,6 +11,7 @@ import json
 import platform
 import re
 import shutil
+import hashlib
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,6 +19,27 @@ from pathlib import Path
 
 class DOSConfigError(ValueError):
     pass
+
+
+class DOSProvisioningError(DOSConfigError):
+    """A required preserved DOS input is absent or fails verification."""
+
+
+@dataclass(frozen=True)
+class PinnedDOSInput:
+    """Content-addressed input required by the qualified Debian DOS stack."""
+    artifact_id: str
+    sha256: str
+    size: int
+    role: str
+
+
+DOSEMU2_SOURCE = PinnedDOSInput(
+    "dosemu2-82770aba3984", "8a08d60590329aa1484f0fa499711793ab3b87bf401d6a6e6eb2f42a93acddfb", 3053938, "source_code")
+FDPP_SOURCE = PinnedDOSInput(
+    "fdpp-dc776d6a348b", "fd6e4332ab3756acff10511d7a97af8c6eb231861341f8b4194b22011a8dc749", 327763, "source_code")
+FREEDOS_M1 = PinnedDOSInput(
+    "freedos-1.4-livecd", "2020ff6bb681967fd6eff8f51ad2e5cd5ab4421165948cef4246e4f7fcaf6339", 293950337, "preservation_original")
 
 
 BACKENDS = ("dosemu2", "dosbox_x", "dosbox_staging", "qemu")
@@ -232,15 +254,23 @@ def backend_evidence(backend: str = "dosemu2") -> dict:
 
 
 def debian_provisioning_plan(*, target_os: str = PRODUCTION_OS, release: str | None = None,
-                             package_available: bool = False, package_version: str | None = None) -> dict:
+                             package_available: bool = False, package_version: str | None = None,
+                             source_commit: str | None = None, source_sha256: str | None = None) -> dict:
     """Return a Debian-first plan; never selects an Ubuntu PPA implicitly."""
     if target_os.lower() != PRODUCTION_OS:
         raise DOSConfigError("DOS runtime production provisioning requires Debian")
     if package_available and not package_version:
         raise DOSConfigError("a Debian package plan requires an exact package version")
-    return {"production_os": PRODUCTION_OS, "release": release, "method": "apt" if package_available else "blocked",
+    if not package_available and bool(source_commit) != bool(source_sha256):
+        raise DOSConfigError("source fallback requires an immutable commit and SHA-256")
+    if source_commit and not re.fullmatch(r"[0-9a-f]{40}", source_commit):
+        raise DOSConfigError("source fallback must use a full immutable commit")
+    method = "apt" if package_available else ("pinned_source" if source_commit else "blocked")
+    return {"production_os": PRODUCTION_OS, "release": release, "method": method,
             "package": "dosemu2" if package_available else None, "version": package_version,
-            "ubuntu_ppa": False, "reason": "Debian package availability requires target-host verification"}
+            "source_commit": source_commit, "source_sha256": source_sha256,
+            "install_prefix": f"/opt/ultimate-bbs-box/dosemu2/{source_commit[:12]}" if source_commit else None,
+            "ubuntu_ppa": False, "reason": "Debian package first; immutable source fallback only"}
 
 
 def freedos_release_metadata(*, version: str = "1.4", artifact: str | None = None,
@@ -251,6 +281,70 @@ def freedos_release_metadata(*, version: str = "1.4", artifact: str | None = Non
     state = "VERIFIED" if artifact and sha256 and source_url else "HUMAN_REQUIRED"
     return {"version": version, "artifact": artifact, "sha256": sha256, "source_url": source_url,
             "state": state, "preservation": "M1_REQUIRED"}
+
+
+def verify_preserved_input(archive_root: str | Path, expected: PinnedDOSInput,
+                           *, artifact_id: str | None = None) -> dict:
+    """Verify an immutable M1 archive object before a DOS build can consume it.
+
+    This deliberately accepts no URL and performs no acquisition.  Acquisition is
+    an M1 operation; provisioning is only allowed to consume an existing object.
+    """
+    try:
+        from ubb_archive import load_metadata, object_path, require_archive
+    except ImportError as exc:  # pragma: no cover - only occurs in broken installs
+        raise DOSProvisioningError("preservation archive support is unavailable") from exc
+    root = Path(archive_root).expanduser().resolve()
+    require_archive(root)
+    aid = artifact_id or expected.artifact_id
+    metadata = load_metadata(root, aid)
+    artifact = metadata["artifact"]
+    if artifact["sha256"].lower() != expected.sha256:
+        raise DOSProvisioningError(f"{aid}: metadata digest is not the pinned digest")
+    if expected.size and int(artifact["size"]) != expected.size:
+        raise DOSProvisioningError(f"{aid}: metadata size is not the pinned size")
+    if artifact["role"] != expected.role:
+        raise DOSProvisioningError(f"{aid}: preservation role is not {expected.role}")
+    path = object_path(root, expected.sha256)
+    if not path.is_file() or path.is_symlink():
+        raise DOSProvisioningError(f"{aid}: immutable object is missing or is a symlink")
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
+    if digest.hexdigest() != expected.sha256 or (expected.size and size != expected.size):
+        raise DOSProvisioningError(f"{aid}: object bytes do not match the pinned identity")
+    return {"artifact_id": aid, "path": str(path), "sha256": digest.hexdigest(),
+            "size": size, "role": artifact["role"],
+            "rights": metadata["rights"], "source": metadata["provenance"]}
+
+
+def provisioning_manifest(archive_root: str | Path, runtime_root: str | Path,
+                          *, dosemu_artifact_id: str | None = None,
+                          fdpp_artifact_id: str | None = None) -> dict:
+    """Return the verified, deterministic input manifest for Debian provisioning.
+
+    Runtime/build paths are intentionally outside the archive.  Calling this twice
+    is read-only and therefore safe for idempotent provisioning orchestration.
+    """
+    inputs = {
+        "dosemu2": verify_preserved_input(archive_root, DOSEMU2_SOURCE,
+                                           artifact_id=dosemu_artifact_id),
+        "fdpp": verify_preserved_input(archive_root, FDPP_SOURCE,
+                                       artifact_id=fdpp_artifact_id),
+        "freedos": verify_preserved_input(archive_root, FREEDOS_M1),
+    }
+    runtime = Path(runtime_root).expanduser().resolve()
+    archive = Path(archive_root).expanduser().resolve()
+    if runtime == archive or archive in runtime.parents:
+        raise DOSProvisioningError("runtime/build state must be outside the preservation archive")
+    return {"format": "ubb-dos-provisioning-v1", "production_os": PRODUCTION_OS,
+            "dosemu2_commit": "82770aba398485117c56523a1a5c261f6e37ca64",
+            "fdpp_commit": "dc776d6a348bff023c71f250a13813b4fee8f517",
+            "runtime_root": str(runtime), "inputs": inputs,
+            "idempotence": "content-addressed-inputs-and-keyed-runtime"}
 
 
 def boot_marker_ready(output: bytes | str, marker: str = "UBB_DOS_READY") -> bool:
@@ -272,8 +366,10 @@ def qualification_evidence(check_id: str, state: str, *, reason: str, backend: d
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Inspect product-neutral DOS runtime profiles")
-    parser.add_argument("command", choices=("profiles", "validate-profile", "qualification", "runtime-info", "qualify"))
+    parser.add_argument("command", choices=("profiles", "validate-profile", "qualification", "runtime-info", "qualify", "provision-manifest"))
     parser.add_argument("value", nargs="?")
+    parser.add_argument("--archive-root")
+    parser.add_argument("--runtime-root")
     args = parser.parse_args(argv)
     profiles = default_profiles()
     if args.command == "profiles": print(json.dumps({k: v.guest_family for k, v in profiles.items()}, sort_keys=True))
@@ -287,6 +383,13 @@ def main(argv=None):
                     qualification_evidence("freedos-media", "HUMAN_REQUIRED",
                                            reason="No approved M1-preserved FreeDOS artifact is available")]
         print(json.dumps(evidence, indent=2, sort_keys=True))
+    elif args.command == "provision-manifest":
+        if not args.archive_root or not args.runtime_root:
+            raise SystemExit("provision-manifest requires --archive-root and --runtime-root")
+        try:
+            print(json.dumps(provisioning_manifest(args.archive_root, args.runtime_root), indent=2, sort_keys=True))
+        except DOSProvisioningError as exc:
+            raise SystemExit(f"provisioning refused: {exc}")
     else: print("no production DOS service configured")
 
 
