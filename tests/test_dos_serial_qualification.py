@@ -40,6 +40,12 @@ class DOSSerialQualificationTests(unittest.TestCase):
         self.assertEqual(MODULE.EXPECTED_RX, bytes((0x41, 0x42, 0x43)))
         self.assertEqual(MODULE.EXPECTED_TX, bytes.fromhex("55 42 42 2D 4F 4B"))
 
+    def test_exchange_is_distinct_from_serial_free_selftest(self):
+        source = (Path(__file__).parents[1] / "qualification" / "serialtest.asm").read_text()
+        self.assertIn("selftest:", source)
+        self.assertIn("test ah, 01h", source.lower())
+        self.assertIn("serial_ready_msg", source)
+
 
 if __name__ == "__main__":
     unittest.main()

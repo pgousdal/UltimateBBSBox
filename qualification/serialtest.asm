@@ -29,7 +29,7 @@ exchange:
     mov ax, 0300h                 ; return modem/line status
     xor dx, dx
     int 14h
-    test al, 01h                  ; line-status data-ready bit
+    test ah, 01h                  ; BIOS INT 14h line-status data-ready bit
     jnz .read
     loop .wait
     jmp fail
@@ -95,7 +95,7 @@ recv_one:
     mov ax, 0300h
     xor dx, dx
     int 14h
-    test al, 01h
+    test ah, 01h
     jnz .got
     loop .poll
     xor ax, ax
