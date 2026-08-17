@@ -215,9 +215,9 @@ diagnostics are implemented. Real peer and Tier-1 qualification remain
 
 ### M9.1a — Real DOSEMU2 + FreeDOS Qualification
 
-Incomplete: real Debian/DOSEMU2/FreeDOS headless boot and binary-safe COM1 now
-pass, including exact CP437/ANSI/CRLF matrices and repeatability. The original
-contract's clean stop/restart and two-instance criteria remain untested. See
+Complete: real Debian/DOSEMU2/FreeDOS headless boot, binary-safe COM1 including
+CP437/ANSI/CRLF, clean stop/restart, and two concurrently isolated instances
+all pass with guest FAT-result evidence and bounded final cleanup. See
 `docs/M9.1a-QUALIFICATION.md`.
 
 ### M9.1b — Debian DOSEMU2 + FreeDOS 1.4 Provisioning
