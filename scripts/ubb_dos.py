@@ -12,6 +12,11 @@ import platform
 import re
 import shutil
 import hashlib
+import os
+import subprocess
+import tarfile
+import tempfile
+import zipfile
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -303,7 +308,12 @@ def verify_preserved_input(archive_root: str | Path, expected: PinnedDOSInput,
         raise DOSProvisioningError(f"{aid}: metadata digest is not the pinned digest")
     if expected.size and int(artifact["size"]) != expected.size:
         raise DOSProvisioningError(f"{aid}: metadata size is not the pinned size")
-    if artifact["role"] != expected.role:
+    allowed_roles = {expected.role}
+    if expected.role == "source_code":
+        # M1's immutable upstream import is normally classified as the
+        # preservation_original; source_code is the role consumed by builds.
+        allowed_roles.add("preservation_original")
+    if artifact["role"] not in allowed_roles:
         raise DOSProvisioningError(f"{aid}: preservation role is not {expected.role}")
     path = object_path(root, expected.sha256)
     if not path.is_file() or path.is_symlink():
@@ -347,6 +357,130 @@ def provisioning_manifest(archive_root: str | Path, runtime_root: str | Path,
             "idempotence": "content-addressed-inputs-and-keyed-runtime"}
 
 
+DEBIAN_BUILD_PACKAGES = (
+    "autoconf", "automake", "bison", "clang", "flex", "gawk", "gettext",
+    "gcc-multilib", "g++-multilib", "libc6-dev-i386",
+    "libasound2-dev", "libelf-dev", "libgpm-dev", "libjson-c-dev",
+    "libslang2-dev", "libslirp-dev", "libtool", "libudev-dev", "libsdl2-dev",
+    "meson", "nasm", "ninja-build", "pkg-config", "python3-ply", "zlib1g-dev",
+)
+
+
+def _safe_extract_tar(source: Path, destination: Path) -> Path:
+    destination.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(source, "r:*") as archive:
+        members = archive.getmembers()
+        root = destination.resolve()
+        for member in members:
+            target = (root / member.name).resolve()
+            if root != target and root not in target.parents:
+                raise DOSProvisioningError("source archive contains path traversal")
+            if member.issym() or member.islnk():
+                link = (root / member.name).resolve()
+                if root not in link.parents:
+                    raise DOSProvisioningError("source archive contains unsafe link")
+        archive.extractall(root)
+    children = [item for item in destination.iterdir()]
+    if len(children) != 1 or not children[0].is_dir():
+        raise DOSProvisioningError("source archive must contain one top-level directory")
+    return children[0]
+
+
+def _run(command: list[str], cwd: Path, env: dict[str, str]) -> None:
+    subprocess.run(command, cwd=cwd, env=env, check=True)
+
+
+def _patch_fdpp_meson(source: Path) -> None:
+    """Apply the documented Meson 1.7 compatibility fix in disposable state."""
+    path = source / "subprojects" / "libfdpp" / "meson.build"
+    if not path.is_file():
+        raise DOSProvisioningError("FDPP source layout is missing libfdpp/meson.build")
+    text = path.read_text(encoding="utf-8")
+    patched = re.sub(r"^\s*depends: tgbin,\s*$\n?", "", text, flags=re.MULTILINE)
+    if patched != text:
+        path.write_text(patched, encoding="utf-8")
+
+
+def provision_runtime(archive_root: str | Path, runtime_root: str | Path,
+                      build_root: str | Path, *, install_dependencies: bool = False) -> dict:
+    """Build the pinned DOSEMU2/FDPP pair from verified M1 source objects.
+
+    The function is deliberately Debian-only and content-addressed.  Existing
+    keyed build/install directories are reused after their manifest verifies,
+    making a second invocation idempotent.  It never downloads or writes below
+    the preservation archive.
+    """
+    if platform.system() != "Linux" or not Path("/etc/debian_version").is_file():
+        raise DOSProvisioningError("DOS runtime provisioning requires Debian Linux")
+    archive = Path(archive_root).expanduser().resolve()
+    runtime = Path(runtime_root).expanduser().resolve()
+    build = Path(build_root).expanduser().resolve()
+    manifest = provisioning_manifest(archive, runtime)
+    if archive == runtime or archive in runtime.parents or archive == build or archive in build.parents:
+        raise DOSProvisioningError("build/runtime state must be outside the preservation archive")
+    if install_dependencies:
+        if os.geteuid() != 0:
+            raise DOSProvisioningError("install_dependencies requires root")
+        subprocess.run(["apt-get", "update"], check=True)
+        subprocess.run(["apt-get", "install", "-y", *DEBIAN_BUILD_PACKAGES], check=True)
+    runtime.mkdir(parents=True, exist_ok=True)
+    build.mkdir(parents=True, exist_ok=True)
+    prefix = runtime / "82770aba3984"
+    marker = prefix / "ubb-provisioning.json"
+    if marker.is_file() and marker.read_text(encoding="utf-8") == json.dumps(manifest, indent=2, sort_keys=True) + "\n":
+        return manifest | {"status": "already-present", "prefix": str(prefix)}
+    dosemu_tar = Path(manifest["inputs"]["dosemu2"]["path"])
+    fdpp_tar = Path(manifest["inputs"]["fdpp"]["path"])
+    dosemu_src = _safe_extract_tar(dosemu_tar, build / "dosemu2-82770aba3984")
+    fdpp_src = _safe_extract_tar(fdpp_tar, build / "fdpp-dc776d6a348b")
+    env = os.environ.copy()
+    env["PREFIX"] = str(prefix)
+    fdpp_build = fdpp_src / "build"
+    _patch_fdpp_meson(fdpp_src)
+    fdpp_env = env.copy()
+    fdpp_env["PKG_CONFIG_LIBDIR"] = "/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+    fdpp_env["LDFLAGS"] = "-m32 -L/usr/lib/i386-linux-gnu"
+    native = build / "fdpp-native.ini"
+    native.write_text("[binaries]\nc = 'gcc'\ncpp = 'g++'\n\n[built-in options]\nc_args = ['-m32']\ncpp_args = ['-m32']\nc_link_args = ['-m32', '-L/usr/lib/i386-linux-gnu']\ncpp_link_args = ['-m32', '-L/usr/lib/i386-linux-gnu']\n", encoding="utf-8")
+    _run(["meson", "setup", str(fdpp_build), "--prefix", str(prefix), "--native-file", str(native)], fdpp_src, fdpp_env)
+    _run(["ninja", "-C", str(fdpp_build), "install"], fdpp_src, fdpp_env)
+    _run(["./autogen.sh"], dosemu_src, env)
+    _run(["./default-configure", f"--prefix={prefix}", "--disable-dj64", "--disable-searpc"], dosemu_src, env)
+    _run(["make", "-j2"], dosemu_src, env)
+    _run(["make", "install"], dosemu_src, env)
+    prefix.mkdir(parents=True, exist_ok=True)
+    marker.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return manifest | {"status": "built", "prefix": str(prefix)}
+
+
+def materialize_freedos(archive_root: str | Path, working_root: str | Path) -> dict:
+    """Derive a disposable FreeDOS ISO/tree without modifying the M1 object."""
+    verified = verify_preserved_input(archive_root, FREEDOS_M1)
+    work = Path(working_root).expanduser().resolve()
+    archive = Path(archive_root).expanduser().resolve()
+    if archive == work or archive in work.parents:
+        raise DOSProvisioningError("FreeDOS working state must be outside the archive")
+    work.mkdir(parents=True, exist_ok=True)
+    iso = work / "FD14LIVE.iso"
+    if iso.is_file():
+        digest = hashlib.sha256(iso.read_bytes()).hexdigest()
+        return {"status": "already-present", "iso": str(iso), "sha256": digest,
+                "source": verified["artifact_id"]}
+    with zipfile.ZipFile(verified["path"]) as bundle:
+        candidates = [item for item in bundle.infolist()
+                      if not item.is_dir() and item.filename.lower().endswith(".iso")]
+        if len(candidates) != 1:
+            raise DOSProvisioningError("FreeDOS archive must contain exactly one ISO")
+        item = candidates[0]
+        if item.file_size > 512 * 1024 * 1024:
+            raise DOSProvisioningError("FreeDOS ISO exceeds materialization limit")
+        with bundle.open(item) as source, iso.open("xb") as target:
+            shutil.copyfileobj(source, target)
+    return {"status": "materialized", "iso": str(iso),
+            "sha256": hashlib.sha256(iso.read_bytes()).hexdigest(),
+            "source": verified["artifact_id"]}
+
+
 def boot_marker_ready(output: bytes | str, marker: str = "UBB_DOS_READY") -> bool:
     """Require an explicit guest-produced marker; process liveness is insufficient."""
     if isinstance(output, bytes):
@@ -366,10 +500,12 @@ def qualification_evidence(check_id: str, state: str, *, reason: str, backend: d
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Inspect product-neutral DOS runtime profiles")
-    parser.add_argument("command", choices=("profiles", "validate-profile", "qualification", "runtime-info", "qualify", "provision-manifest"))
+    parser.add_argument("command", choices=("profiles", "validate-profile", "qualification", "runtime-info", "qualify", "provision-manifest", "provision"))
     parser.add_argument("value", nargs="?")
     parser.add_argument("--archive-root")
     parser.add_argument("--runtime-root")
+    parser.add_argument("--build-root")
+    parser.add_argument("--install-dependencies", action="store_true")
     args = parser.parse_args(argv)
     profiles = default_profiles()
     if args.command == "profiles": print(json.dumps({k: v.guest_family for k, v in profiles.items()}, sort_keys=True))
@@ -390,6 +526,14 @@ def main(argv=None):
             print(json.dumps(provisioning_manifest(args.archive_root, args.runtime_root), indent=2, sort_keys=True))
         except DOSProvisioningError as exc:
             raise SystemExit(f"provisioning refused: {exc}")
+    elif args.command == "provision":
+        if not args.archive_root or not args.runtime_root or not args.build_root:
+            raise SystemExit("provision requires --archive-root, --runtime-root, and --build-root")
+        try:
+            print(json.dumps(provision_runtime(args.archive_root, args.runtime_root, args.build_root,
+                                               install_dependencies=args.install_dependencies), indent=2, sort_keys=True))
+        except (DOSProvisioningError, subprocess.CalledProcessError) as exc:
+            raise SystemExit(f"provisioning failed: {exc}")
     else: print("no production DOS service configured")
 
 
