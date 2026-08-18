@@ -360,9 +360,12 @@ def provisioning_manifest(archive_root: str | Path, runtime_root: str | Path,
 DEBIAN_BUILD_PACKAGES = (
     "autoconf", "automake", "bison", "clang", "flex", "gawk", "gettext",
     "gcc-multilib", "g++-multilib", "libc6-dev-i386",
-    "libasound2-dev", "libelf-dev", "libgpm-dev", "libjson-c-dev",
-    "libslang2-dev", "libslirp-dev", "libtool", "libudev-dev", "libsdl2-dev",
-    "meson", "nasm", "ninja-build", "pkg-config", "python3-ply", "zlib1g-dev",
+    "libao-dev", "libao-dev:i386", "libasound2-dev", "libasound2-dev:i386",
+    "libelf-dev", "libelf-dev:i386", "libgpm-dev", "libgpm-dev:i386",
+    "libjson-c-dev", "libjson-c-dev:i386",
+    "libslang2-dev", "libslang2-dev:i386", "libslirp-dev", "libslirp-dev:i386",
+    "libtool", "libudev-dev", "libudev-dev:i386", "libsdl2-dev", "libsdl2-dev:i386",
+    "meson", "nasm", "ninja-build", "pkg-config", "python3-ply", "zlib1g-dev", "zlib1g-dev:i386",
 )
 
 
@@ -388,6 +391,30 @@ def _safe_extract_tar(source: Path, destination: Path) -> Path:
 
 def _run(command: list[str], cwd: Path, env: dict[str, str]) -> None:
     subprocess.run(command, cwd=cwd, env=env, check=True)
+
+
+def _require_fdpp_32bit_support() -> None:
+    """Fail closed unless Debian can link a 32-bit libelf consumer."""
+    foreign = subprocess.run(["dpkg", "--print-foreign-architectures"], capture_output=True, text=True, check=True).stdout.split()
+    if "i386" not in foreign:
+        raise DOSProvisioningError("FDPP requires Debian i386 foreign architecture")
+    package = subprocess.run(["dpkg-query", "-W", "-f=${Status}", "libelf-dev:i386"], capture_output=True, text=True)
+    if package.returncode != 0 or "install ok installed" not in package.stdout:
+        raise DOSProvisioningError("FDPP requires installed libelf-dev:i386")
+    probe = Path(tempfile.mkdtemp(prefix="ubb-fdpp-probe-"))
+    try:
+        source = probe / "probe.c"
+        output = probe / "probe"
+        source.write_text("#include <libelf.h>\nint main(void){return elf_version(EV_CURRENT)==EV_NONE;}\n", encoding="utf-8")
+        subprocess.run(["gcc", "-m32", str(source), "-lelf", "-o", str(output)], check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        header = subprocess.run(["file", str(output)], capture_output=True, text=True, check=True).stdout
+        if "ELF 32-bit" not in header:
+            raise DOSProvisioningError("32-bit libelf probe did not produce an ELF32 executable")
+    except subprocess.CalledProcessError as exc:
+        raise DOSProvisioningError("Debian cannot link a 32-bit libelf consumer") from exc
+    finally:
+        shutil.rmtree(probe, ignore_errors=True)
 
 
 def _patch_fdpp_meson(source: Path) -> None:
@@ -421,8 +448,12 @@ def provision_runtime(archive_root: str | Path, runtime_root: str | Path,
     if install_dependencies:
         if os.geteuid() != 0:
             raise DOSProvisioningError("install_dependencies requires root")
+        foreign = subprocess.run(["dpkg", "--print-foreign-architectures"], capture_output=True, text=True, check=True).stdout.split()
+        if "i386" not in foreign:
+            subprocess.run(["dpkg", "--add-architecture", "i386"], check=True)
         subprocess.run(["apt-get", "update"], check=True)
         subprocess.run(["apt-get", "install", "-y", *DEBIAN_BUILD_PACKAGES], check=True)
+    _require_fdpp_32bit_support()
     runtime.mkdir(parents=True, exist_ok=True)
     build.mkdir(parents=True, exist_ok=True)
     prefix = runtime / "82770aba3984"
@@ -431,21 +462,65 @@ def provision_runtime(archive_root: str | Path, runtime_root: str | Path,
         return manifest | {"status": "already-present", "prefix": str(prefix)}
     dosemu_tar = Path(manifest["inputs"]["dosemu2"]["path"])
     fdpp_tar = Path(manifest["inputs"]["fdpp"]["path"])
-    dosemu_src = _safe_extract_tar(dosemu_tar, build / "dosemu2-82770aba3984")
-    fdpp_src = _safe_extract_tar(fdpp_tar, build / "fdpp-dc776d6a348b")
+    # Build trees are disposable.  Always discard a partial/configured tree so
+    # a failed architecture probe or linker run cannot poison the next run.
+    dosemu_root = build / "dosemu2-82770aba3984"
+    fdpp_root = build / "fdpp-dc776d6a348b"
+    for stale in (dosemu_root, fdpp_root):
+        if stale.exists():
+            shutil.rmtree(stale)
+    dosemu_src = _safe_extract_tar(dosemu_tar, dosemu_root)
+    fdpp_src = _safe_extract_tar(fdpp_tar, fdpp_root)
     env = os.environ.copy()
     env["PREFIX"] = str(prefix)
     fdpp_build = fdpp_src / "build"
     _patch_fdpp_meson(fdpp_src)
     fdpp_env = env.copy()
     fdpp_env["PKG_CONFIG_LIBDIR"] = "/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+    fdpp_env["PKG_CONFIG_PATH"] = "/usr/lib/i386-linux-gnu/pkgconfig"
     fdpp_env["LDFLAGS"] = "-m32 -L/usr/lib/i386-linux-gnu"
-    native = build / "fdpp-native.ini"
-    native.write_text("[binaries]\nc = 'gcc'\ncpp = 'g++'\n\n[built-in options]\nc_args = ['-m32']\ncpp_args = ['-m32']\nc_link_args = ['-m32', '-L/usr/lib/i386-linux-gnu']\ncpp_link_args = ['-m32', '-L/usr/lib/i386-linux-gnu']\n", encoding="utf-8")
-    _run(["meson", "setup", str(fdpp_build), "--prefix", str(prefix), "--native-file", str(native)], fdpp_src, fdpp_env)
+    # FDPP's kernel and loader are an i386 target.  A native file only
+    # changes compiler flags; Meson would still identify the host as x86_64
+    # and make NASM emit elf64 objects.  Declare the target as a real Meson
+    # cross build so both C and assembler outputs are ELF32.
+    cross = build / "fdpp-i386.ini"
+    cross.write_text(
+        "[binaries]\nc = 'gcc'\ncpp = 'g++'\nar = 'ar'\nstrip = 'strip'\npkgconfig = 'pkg-config'\n\n"
+        "[host_machine]\nsystem = 'linux'\ncpu_family = 'x86'\ncpu = 'i686'\nendian = 'little'\n\n"
+        "[properties]\nneeds_exe_wrapper = false\n\n[built-in options]\n"
+        "c_args = ['-m32']\ncpp_args = ['-m32']\nc_link_args = ['-m32', '-L/usr/lib/i386-linux-gnu']\n"
+        "cpp_link_args = ['-m32', '-L/usr/lib/i386-linux-gnu']\n",
+        encoding="utf-8",
+    )
+    _run(["meson", "setup", str(fdpp_build), "--prefix", str(prefix), "--cross-file", str(cross)], fdpp_src, fdpp_env)
     _run(["ninja", "-C", str(fdpp_build), "install"], fdpp_src, fdpp_env)
+    # FDPP's install step intentionally publishes only versioned SONAMEs,
+    # while DOSEMU2's legacy Makefiles link with -lfdpp/-lfdldr.  Add the
+    # disposable development symlinks expected by that consumer.
+    fdpp_lib = prefix / "lib" / "fdpp"
+    for stem in ("libfdpp.so", "libfdldr.so"):
+        link = fdpp_lib / stem
+        if not link.exists():
+            versions = sorted(fdpp_lib.glob(stem + ".*"))
+            if not versions:
+                raise DOSProvisioningError(f"FDPP install missing {stem} SONAME")
+            link.symlink_to(versions[-1].name)
+    # DOSEMU2's configure discovers the freshly installed FDPP through its
+    # pkg-config metadata and runtime library directory; keep this scoped to
+    # the disposable build, rather than altering the host environment.
+    env["PKG_CONFIG_PATH"] = f"{prefix}/lib/pkgconfig:{prefix}/share/pkgconfig"
+    env["LD_LIBRARY_PATH"] = f"{prefix}/lib:{prefix}/lib/fdpp"
+    env["CFLAGS"] = "-m32"
+    env["CXXFLAGS"] = "-m32"
+    env["LDFLAGS"] = f"-m32 -L{prefix}/lib/fdpp"
     _run(["./autogen.sh"], dosemu_src, env)
-    _run(["./default-configure", f"--prefix={prefix}", "--disable-dj64", "--disable-searpc"], dosemu_src, env)
+    _run([
+        "./default-configure", f"--prefix={prefix}", "--disable-dj64", "--disable-searpc",
+        # Keep the qualified headless runtime's plugin surface deterministic;
+        # optional SDL/FluidSynth/Munt/IEEE1284 integrations pull unrelated
+        # host libraries and are outside M9.1b.
+        "--enable-plugins=libao,gpm,term,X,slirp,console,modemu,fdpp,charset,extra_charsets,json,dosdrv,doscmd,periph,debugger",
+    ], dosemu_src, env)
     _run(["make", "-j2"], dosemu_src, env)
     _run(["make", "install"], dosemu_src, env)
     prefix.mkdir(parents=True, exist_ok=True)
